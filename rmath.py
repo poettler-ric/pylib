@@ -9,18 +9,18 @@ def simpson(f, a, b, n=3):
     """
     steps = n - 1
     result = 0
-    c = 0 # counter
+    i = 0 # counter
     dx = (b - a) / steps
-    for i in arange(a, nextafter(b, b+dx), dx):
+    for x in arange(a, nextafter(b, b+dx), dx):
         factor = 1
-        if c == 0:
+        if i == 0:
             pass
-        elif c == steps:
+        elif i == steps:
             pass
-        elif c % 2:
+        elif i % 2:
             factor = 4
         else:
             factor = 2
-        c += 1
-        result += dx / 3 * f(i) * factor
+        i += 1
+        result += dx / 3 * f(x) * factor
     return result
