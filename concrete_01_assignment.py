@@ -30,8 +30,12 @@ fcd = fck * acc / gamma_c # [kPa]
 fyk = 550*10**3 # [kPa]
 fyd = fyk / gamma_y # [kPa]
 
+fctm = .3 * (fck/1000)**(2/3) * 1000 # [kPa]
+fctk005 = .7 * fctm # [kPa]
+
 E_c = 22 * (33/10)**.3 * 10**6 # [kPa]
 E_y = 200*10**6 # [kPa]
+ae = E_y / E_c
 
 # geometry values
 l1 = 1 # [m]
