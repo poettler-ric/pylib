@@ -3,10 +3,37 @@
 from math import pi, sin, cos
 from rmath import simpson as s
 
+# richi
 A = 1
 B = 4
 C = 9
+# michi
+# A = 4
+# B = 0
+# C = 3
+# melanie
+# A = 0
+# B = 9
+# C = 6
 
+# meterial values
+ar = 17/21
+ka = 99/238
+
+gamma_c = 1.5
+gamma_y = 1.15
+acc = .85
+
+fck = 25*10**3 # [kPa]
+fcd = fck * acc / gamma_c # [kPa]
+
+fyk = 550*10**3 # [kPa]
+fyd = fyk / gamma_y # [kPa]
+
+E_c = 22 * (33/10)**.3 * 10**6 # [kPa]
+E_y = 200*10**6 # [kPa]
+
+# geometry values
 l1 = 1 # [m]
 l2 = 10 # [m]
 l3 = 2.5 + (B/3 * 0.1) # [m]
@@ -14,9 +41,11 @@ l4 = 6 + (A/3 *.1) # [m]
 
 b = .35 # [m]
 h = .55 # [m]
+d = .5 # [m]
+d1 = d2 = .05 # [m]
 
+w = b * h**2 / 6
 Iy = b * h**3 / 12 # [m^2]
-E_c = 22 * (33/10)**.3 * 10**6 # [kPa]
 
 alpha = 15 / 180 * pi # [rad]
 
