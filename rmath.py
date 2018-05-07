@@ -24,3 +24,11 @@ def simpson(f, a, b, n=3):
         i += 1
         result += dx / 3 * f(x) * factor
     return result
+
+def interpolate(x, x0, y0, x1, y1):
+    """
+    Linear interpolation. Determines the y-value for x based on y(x0) = y0 and
+    y(x1) = y1.
+    """
+    return y0 + (y1 - y0) / (x1 - x0) * (x - x0)
+
