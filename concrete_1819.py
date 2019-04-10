@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from math import pi, sin, cos
-from rmath import simpson as s
+from scipy.integrate import quad
 
 STUDENT_ID = "1530149"
 
@@ -179,10 +179,10 @@ def d_xx(E, I, sys0, sys1):
     m3 = lambda x: sys0.beam3.M(x) * sys1.beam3.M(x)
     m4 = lambda x: sys0.beam4.M(x) * sys1.beam4.M(x)
     return 1 / (E * I) * \
-        (s(m1, 0, sys0.beam1.length) +
-         s(m2, 0, sys0.beam2.length) +
-         s(m3, 0, sys0.beam3.length) +
-         s(m4, 0, sys0.beam4.length))
+        (quad(m1, 0, sys0.beam1.length)[0] +
+         quad(m2, 0, sys0.beam2.length)[0] +
+         quad(m3, 0, sys0.beam3.length)[0] +
+         quad(m4, 0, sys0.beam4.length)[0])
 
 
 def energy_theorem(E, I, sys0, sys1):
