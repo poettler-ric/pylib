@@ -67,9 +67,9 @@ def ny_x(fyk, area, epsilon_y, E_y=_default_E_y):
 
 
 def alpha_r(fck, epsilon_c):
-    row = c_properties[c_properties.fck == fck]
-    ec2 = row.epsilon_c2.values.item(0)
-    ecu2 = row.epsilon_cu2.values.item(0)
+    concrete = c_properties[c_properties.fck == fck]
+    ec2 = concrete.epsilon_c2.values.item(0)
+    ecu2 = concrete.epsilon_cu2.values.item(0)
     assert 0 <= epsilon_c and epsilon_c <= 3.5 * permille
 
     plain = epsilon_c / permille
@@ -80,9 +80,9 @@ def alpha_r(fck, epsilon_c):
 
 
 def k_a(fck, epsilon_c):
-    row = c_properties[c_properties.fck == fck]
-    ec2 = row.epsilon_c2.values.item(0)
-    ecu2 = row.epsilon_cu2.values.item(0)
+    concrete = c_properties[c_properties.fck == fck]
+    ec2 = concrete.epsilon_c2.values.item(0)
+    ecu2 = concrete.epsilon_cu2.values.item(0)
     assert 0 <= epsilon_c and epsilon_c <= 3.5 * permille
 
     plain = epsilon_c / permille
@@ -101,12 +101,16 @@ def nc_x_block_coefficient(fck, b, epsilon_c):
     return alpha_r(fck, epsilon_c) * fcd(fck) * x * b, k_a(fck, epsilon_c) * x
 
 
-def mn_pure_bending(fck, fyk, b, h, d1, d2, epsilon_c, as1, as2):
+def mn_pure_bending(fck, fyk, b, h, d1, d2, as1, as2):
+    # epsilon top = -epsilon_cu2
+    concrete = c_properties[c_properties.fck == fck]
+    ecu2 = concrete.epsilon_cu2.values.item(0)
+
     x = symbols('x')
     d = h - d1
-    epsilon_y1_x = epsilon_c / x * (d - x)
-    epsilon_y2_x = epsilon_c / x * (x - d2)
-    nc_x, d_nc_x = nc_x_block_coefficient(fck, b, epsilon_c)
+    epsilon_y1_x = ecu2 / x * (d - x)
+    epsilon_y2_x = ecu2 / x * (x - d2)
+    nc_x, d_nc_x = nc_x_block_coefficient(fck, b, ecu2)
 
     threshold = plastification_threshold(fyk)
 
@@ -141,18 +145,64 @@ def mn_pure_bending(fck, fyk, b, h, d1, d2, epsilon_c, as1, as2):
     return convert_to(m_rd, MNm).evalf(), 0 * MN
 
 
-def mn_balanced_point(fck, fyk, b, h, d1, d2, epsilon_c, as1, as2):
+def mn_balanced_point(fck, fyk, b, h, d1, d2, as1, as2):
+    # epsilon top = -epsilon_cu2
+    # epsilon bottom = epsilon_cu2
+    concrete = c_properties[c_properties.fck == fck]
+    ecu2 = concrete.epsilon_cu2.values.item(0)
+
     x = h / 2
     d = h - d1
 
-    nc, d_nc = nc_block_coefficient(fck, b, epsilon_c, x)
+    nc, d_nc = nc_block_coefficient(fck, b, ecu2, x)
 
-    epsilon_y1 = epsilon_c / x * (d - x)
-    epsilon_y2 = epsilon_c / x * (x - d2)
+    epsilon_y1 = ecu2 / x * (d - x)
+    epsilon_y2 = ecu2 / x * (x - d2)
 
     ny1 = ny(fyk, as1, epsilon_y1)
     ny2 = ny(fyk, as2, epsilon_y2)
 
     n_rd = ny1 - nc - ny2
+    n_rd = convert_to(n_rd.evalf(), [One, MN])
     m_rd = n_rd * (h / 2 - d1) + nc * (d - d_nc) + ny2 * (d - d2)
     return convert_to(m_rd, MNm).evalf(), convert_to(n_rd, MN).evalf()
+
+
+def mn_decompression(fck, fyk, b, h, d1, d2, as1, as2):
+    # epsilon top = -epsilon_cu2
+    # epsilon bottom = 0
+    concrete = c_properties[c_properties.fck == fck]
+    ecu2 = concrete.epsilon_cu2.values.item(0)
+
+    x = h
+    d = h - d1
+
+    nc, d_nc = nc_block_coefficient(fck, b, ecu2, x)
+
+    epsilon_y1 = ecu2 / x * d1
+    epsilon_y2 = ecu2 / x * (h - d2)
+
+    ny1 = ny(fyk, as1, epsilon_y1)
+    ny2 = ny(fyk, as2, epsilon_y2)
+
+    n_rd = -ny1 - nc - ny2
+    n_rd = convert_to(n_rd.evalf(), [One, MN])
+    m_rd = n_rd * (h / 2 - d1) + nc * (d - d_nc) + ny2 * (d - d2)
+    return convert_to(m_rd, [One, MNm]).evalf(), convert_to(n_rd, [One, MN]).evalf()
+
+
+def mn_pure_compression(fck, fyk, b, h, d1, d2, as1, as2):
+    # epsilon top = -epsilon_c2
+    # epsilon bottom = -epsilon_c2
+    concrete = c_properties[c_properties.fck == fck]
+    ec2 = concrete.epsilon_c2.values.item(0)
+
+    epsilon_y1 = ec2
+    epsilon_y2 = ec2
+
+    nc = fcd(fck) * b * h
+    ny1 = ny(fyk, as1, epsilon_y1)
+    ny2 = ny(fyk, as2, epsilon_y2)
+
+    n_rd = -ny1 - nc - ny2
+    return 0 * MNm, convert_to(n_rd, [One, MN]).evalf()

@@ -2,9 +2,10 @@
 
 from sympy import pi
 from concrete import (
-    alpha_cc, gamma_c, gamma_y,
     mn_pure_bending,
     mn_balanced_point,
+    mn_decompression,
+    mn_pure_compression,
 )
 from mechanics import (
     convert_to,
@@ -27,8 +28,8 @@ if __name__ == '__main__':
     fyk = 550 * MPa
 
     res = list()
-
-    epsilon_c = 3.5 * permille
-    res.append(mn_pure_bending(fck, fyk, b, h, d1, d2, epsilon_c, as1, as2))
-    res.append(mn_balanced_point(fck, fyk, b, h, d1, d2, epsilon_c, as1, as2))
+    res.append(mn_pure_bending(fck, fyk, b, h, d1, d2, as1, as2))
+    res.append(mn_balanced_point(fck, fyk, b, h, d1, d2, as1, as2))
+    res.append(mn_decompression(fck, fyk, b, h, d1, d2, as1, as2))
+    res.append(mn_pure_compression(fck, fyk, b, h, d1, d2, as1, as2))
     print(res)
