@@ -101,6 +101,33 @@ def nc_x_block_coefficient(fck, b, epsilon_c):
     return alpha_r(fck, epsilon_c) * fcd(fck) * x * b, k_a(fck, epsilon_c) * x
 
 
+def mn_centric_pull(fck, fyk, b, h, d1, d2, as1, as2):
+    # TODO: assert symmetry?
+    epsilon_y1 = 4 * permille
+    epsilon_y2 = 4 * permille
+
+    ny1 = ny(fyk, as1, epsilon_y1)
+    ny2 = ny(fyk, as2, epsilon_y2)
+
+    n_rd = ny1 + ny2
+    return 0 * MNm, convert_to(n_rd, [One, MN]).evalf()
+
+
+def mn_excentric_pull(fck, fyk, b, h, d1, d2, as1, as2):
+    d = h - d1
+
+    epsilon_y1 = plastification_threshold(fyk)
+    epsilon_y2 = epsilon_y1 / d * d2
+
+    ny1 = ny(fyk, as1, epsilon_y1)
+    ny2 = ny(fyk, as2, epsilon_y2)
+
+    n_rd = ny1 + ny2
+    n_rd = convert_to(n_rd.evalf(), [One, MN])
+    m_rd = n_rd * (h / 2 - d1) - ny2 * (d - d2)
+    return convert_to(m_rd, [One, MNm]).evalf(), convert_to(n_rd, [One, MN]).evalf()
+
+
 def mn_pure_bending(fck, fyk, b, h, d1, d2, as1, as2):
     # epsilon top = -epsilon_cu2
     concrete = c_properties[c_properties.fck == fck]
@@ -192,6 +219,7 @@ def mn_decompression(fck, fyk, b, h, d1, d2, as1, as2):
 
 
 def mn_pure_compression(fck, fyk, b, h, d1, d2, as1, as2):
+    # TODO: assert symmetry?
     # epsilon top = -epsilon_c2
     # epsilon bottom = -epsilon_c2
     concrete = c_properties[c_properties.fck == fck]
