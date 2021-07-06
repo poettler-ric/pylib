@@ -1,3 +1,10 @@
+#!/bin/env python3
+
+from configparser import ConfigParser, ExtendedInterpolation
+from argparse import ArgumentParser
+from logging import basicConfig, info, INFO
+from json import loads
+
 import pcraster as pcr
 import numpy as np
 import shapefile
@@ -218,141 +225,187 @@ def read_soil_to_dict(soils_folder):
 
 if __name__ == "__main__":
     # Raster files
-    working_folder = r"/home/iwbworkstation/Desktop/working_dir/NSGA2_hbv/Model_200m_HBV04-06/staticmaps"
-    masterdem = "wflow_dem.map"
-    catchment_mask = "wflow_catchment.map"
-    outlet_map = "wflow_outlet.map"
-    river_burn = "wflow_riverburnin.map"
-    ldd_map = "wflow_ldd.map"
-    streamorder_map = "wflow_streamorder.map"
-    river_width_map = "wflow_riverwidth.map"
+    working_folder = r"/data/home/richi/master_thesis/staticmaps"
+    # masterdem = "wflow_dem.map"
+    # catchment_mask = "wflow_catchment.map"
+    # outlet_map = "wflow_outlet.map"
+    # river_burn = "wflow_riverburnin.map"
+    # ldd_map = "wflow_ldd.map"
+    # streamorder_map = "wflow_streamorder.map"
+    # river_width_map = "wflow_riverwidth.map"
     soil_map = "wflow_soil.map"
     landuse_map = "wflow_landuse.map"
-    ksat_ver_file = "KsatVer.map"
-    thetaS_file = "ThetaS.map"
-    thetaR_file = "ThetaR.map"
+    # ksat_ver_file = "KsatVer.map"
+    # thetaS_file = "ThetaS.map"
+    # thetaR_file = "ThetaR.map"
     M_file = "M.map"
     N_file = "N.map"
     Sl_file = "Sl.map"
     Swood_file = "Swood.map"
     Kext_file = "Kext.map"
     rooting_file = "RootingDepth.map"
-    landuse_wflow = "wflow_landuse.map"
-    soil_thickness_map = "SoilThickness.map"
-    min_soil_thickness_map = "SoilMinThickness.map"
+    # landuse_wflow = "wflow_landuse.map"
+    # soil_thickness_map = "SoilThickness.map"
+    # min_soil_thickness_map = "SoilMinThickness.map"
 
-    ## shape files
-    # shape_catchment = r'/home/iwbworkstation/Desktop/working_dir/50m_data/1_Shapes/catchment_out_rep_res.shp'
-    # rivershape = r'/home/iwbworkstation/Desktop/working_dir/50m_data/1_Shapes/Gewassernetz_UTM33N_simple.shp'
-    #
-    ## Soil stuff
-    # soils_folder = '/home/iwbworkstation/Desktop/working_dir/50m_data/2_Soil'
-    # dictionary = {'0-5':{},'5-15':{},'15-30':{},'30-60':{},'60-100':{},'100-200':{}}
-    # soil_depth = [25,100,225,450,800,1500]
-    # soil_thickness = 2000.
-    ## takes c from which layers
-    # take_c = [1,2,3,4]
-    #
-    ## Landuse stuff
-    # landuse_file = r'/home/iwbworkstation/Desktop/working_dir/50m_data/4_Landuse/landuse_map_UTM33N.map'
-    # landuse_lookup = r'/home/iwbworkstation/Desktop/working_dir/50m_data/4_Landuse/landuse_lookup'
-    #
-    ## Settings
-    ## set maximum streamorder
-    # maxorder = 4
-    #
+    from sys import exit
+
+    basicConfig(level=INFO, format="%(levelname)s %(asctime)s: %(message)s")
+
+    DEFAULT_MAX_STREAMORDER = 4
+
+    config = ConfigParser(interpolation=ExtendedInterpolation())
+    parser = ArgumentParser(description="Prepare wflow files")
+    parser.add_argument("config_file", help="configuration file destination")
+    args = parser.parse_args()
+    config.read(args.config_file)
+
+    # Settings
+    # set maximum streamorder
+    if "Configuration" not in config:
+        config["Configuration"] = {}
+    if "max_stream_order" not in config["Configuration"]:
+        config["Configuration"]["max_stream_order"] = str(DEFAULT_MAX_STREAMORDER)
+
+    # Soil stuff
+    # soils_folder = "/home/iwbworkstation/Desktop/working_dir/50m_data/2_Soil"
+    # dictionary = {
+    #     "0-5": {},
+    #     "5-15": {},
+    #     "15-30": {},
+    #     "30-60": {},
+    #     "60-100": {},
+    #     "100-200": {},
+    # }
+    # soil_depth = [25, 100, 225, 450, 800, 1500]
+    # soil_thickness = 2000.0
+    # takes c from which layers
+    # take_c = [1, 2, 3, 4]
+
+    # Landuse stuff
+    # landuse_file = r"/home/iwbworkstation/Desktop/working_dir/50m_data/4_Landuse/landuse_map_UTM33N.map"
+    # landuse_lookup = (
+    #     r"/home/iwbworkstation/Desktop/working_dir/50m_data/4_Landuse/landuse_lookup"
+    # )
+
     pcr.setglobaloption("unitcell")
-    #
-    # pcr.setclone(working_folder + '/' + masterdem)
-    #
-    ## Get values of the clone
-    # rows = pcr.clone().nrRows()
-    # cols = pcr.clone().nrCols()
-    #
-    # cell_size = pcr.clone().cellSize()
-    #
-    ## coordinates are in upper left corner
-    # xmin = pcr.clone().west()
-    # ymin = pcr.clone().north()
-    #
-    # dem = pcr.readmap(working_folder + '/' + masterdem)
-    #
+
+    pcr.setclone(config["Paths"]["masterdem"])
+
+    # Get values of the clone
+    rows = pcr.clone().nrRows()
+    cols = pcr.clone().nrCols()
+
+    cell_size = pcr.clone().cellSize()
+
+    # coordinates are in upper left corner
+    xmin = pcr.clone().west()
+    ymin = pcr.clone().north()
+
+    dem = pcr.readmap(config["Paths"]["masterdem"])
+
     ####################################
     ##  Generate map of cell centers
     ####################################
-    #
-    ## Generate map of cell centers
-    # print('Determine cell centers')
-    # cell_centers = init_cellcenter(rows,cols,cell_size,xmin,ymin)
-    # print(cell_centers)
-    #
+
+    # Generate map of cell centers
+    info("Determine cell centers")
+    cell_centers = init_cellcenter(rows, cols, cell_size, xmin, ymin)
+
     ####################################
     ##  Generate catchment mask from shape
     ####################################
-    #
-    # print('Create catchment mask')
-    # out_mask = working_folder + '/' + catchment_mask
-    ## reads the catchment shapefile
-    # shape = shapefile.Reader(shape_catchment)
-    # feature = shape.shapeRecords()[0]
-    ## contains shape geometry
-    # first = feature.shape.__geo_interface__
-    ## creates a numpy array of the mask
-    # raster = gen_inpoly(first,cell_centers, rows, cols)
-    ## write raster out
-    # mask_raster = pcr.numpy2pcr(pcr.Nominal,raster,10)
-    # pcr.report(mask_raster,out_mask)
-    #
+
+    if (
+        "catchment_mask" in config["Jobs"]
+        and config.getboolean("Jobs", "catchment_mask")
+        or "stream_order" in config["Jobs"]
+        and config.getboolean("Jobs", "stream_order")
+        or "river_width" in config["Jobs"]
+        and config.getboolean("Jobs", "river_width")
+    ):
+        info("Create catchment mask")
+
+        # reads the catchment shapefile
+        shape = shapefile.Reader(config["Shapefiles"]["shape_catchment"])
+        feature = shape.shapeRecords()[0]
+        # contains shape geometry
+        first = feature.shape.__geo_interface__
+        # creates a numpy array of the mask
+        raster = gen_inpoly(first, cell_centers, rows, cols)
+        # write raster out
+        mask_raster = pcr.numpy2pcr(pcr.Nominal, raster, 10)
+        pcr.report(mask_raster, config["Outfiles"]["catchment_mask"])
+
     ####################################
     ##  Generate outlet point
     ####################################
-    #
-    # print('Generate outlet map')
-    # out_outlet = working_folder + '/' + outlet_map
-    ## first point = outlet ; second point = gauge Edelsdorf
-    # outlet = [[530721,5259233],[535219.8,5258132.7]]
-    #
-    ## burn in river and stuff like that
-    # outlet_array = burn_coords(cell_centers,rows,cols,outlet,cell_size)
-    #
-    # outlet_pcr = pcr.numpy2pcr(pcr.Nominal,outlet_array,10)
-    # pcr.report(outlet_pcr,out_outlet)
-    #
+
+    if "outlet_map" in config["Jobs"] and config.getboolean("Jobs", "outlet_map"):
+        info("Generate outlet map")
+
+        outlets = []
+        for name, coords in config["Outlets"].items():
+            outlets.append(loads(coords))
+
+        ## burn in river and stuff like that
+        outlet_array = burn_coords(cell_centers, rows, cols, outlets, cell_size)
+
+        outlet_pcr = pcr.numpy2pcr(pcr.Nominal, outlet_array, 10)
+        pcr.report(outlet_pcr, config["Outfiles"]["outlet_map"])
+
     ####################################
     ##  Generate river burn in
     ####################################
-    #
-    # print('Burn in river')
-    # out_river = working_folder + '/' + river_burn
-    # riv_shape = shapefile.Reader(rivershape)
-    # riv_points = generate_river_points(riv_shape,cell_size)
-    # riv_array = burn_in_river(cell_centers, rows,cols,riv_points,cell_size)
-    # riv_corrected = gen_river_connectivity(riv_array,rows,cols)
-    ## turn off correction
-    # riv_corrected = riv_array
-    # riv_pcr = pcr.numpy2pcr(pcr.Nominal,riv_corrected,10)
-    # pcr.report(riv_pcr,out_river)
-    #
+
+    if (
+        "river_burn" in config["Jobs"]
+        and config.getboolean("Jobs", "river_burn")
+        or "ldd_map" in config["Jobs"]
+        and config.getboolean("Jobs", "ldd_map")
+        or "stream_order" in config["Jobs"]
+        and config.getboolean("Jobs", "stream_order")
+        or "river_width" in config["Jobs"]
+        and config.getboolean("Jobs", "river_width")
+    ):
+        info("Burn in river")
+
+        riv_shape = shapefile.Reader(config["Shapefiles"]["rivershape"])
+        riv_points = generate_river_points(riv_shape, cell_size)
+        riv_array = burn_in_river(cell_centers, rows, cols, riv_points, cell_size)
+        riv_corrected = gen_river_connectivity(riv_array, rows, cols)
+        ## turn off correction
+        riv_corrected = riv_array
+        riv_pcr = pcr.numpy2pcr(pcr.Nominal, riv_corrected, 10)
+        pcr.report(riv_pcr, config["Outfiles"]["river_burn"])
+
     ####################################
     ##       Create ldd map
     ####################################
-    #
-    # print('Create local drainage direction')
-    # ldd_map = working_folder + '/' + ldd_map
-    #
-    ## removing nans
-    # riv_where_nan = np.isnan(riv_corrected)
-    # riv_corrected[riv_where_nan] = 0.0
-    # riv_pcr_no_nan = pcr.numpy2pcr(pcr.Scalar,riv_corrected,10)
-    #
-    ## determine regional slope where the river should run
-    ##ldddem = pcr.ifthen(pcr.boolean(mask_raster), dem)
-    # ldddem = pcr.ifthenelse(riv_pcr_no_nan >= 1.0, dem - 1000., dem)
-    # ldd = pcr.lddcreate(ldddem, 10.0e35,10.0e35,10.0e35,10.0e35)
-    # lddrep = pcr.lddrepair(ldd)
-    ##lddmasked = pcr.ifthen(pcr.boolean(mask_raster), lddrep)
-    # pcr.report(lddrep, ldd_map)
-    #
+
+    if (
+        "ldd_map" in config["Jobs"]
+        and config.getboolean("Jobs", "ldd_map")
+        or "stream_order" in config["Jobs"]
+        and config.getboolean("Jobs", "stream_order")
+        or "river_width" in config["Jobs"]
+        and config.getboolean("Jobs", "river_width")
+    ):
+        info("Create local drainage direction")
+
+        # removing nans
+        riv_where_nan = np.isnan(riv_corrected)
+        riv_corrected[riv_where_nan] = 0.0
+        riv_pcr_no_nan = pcr.numpy2pcr(pcr.Scalar, riv_corrected, 10)
+
+        # determine regional slope where the river should run
+        # ldddem = pcr.ifthen(pcr.boolean(mask_raster), dem)
+        ldddem = pcr.ifthenelse(riv_pcr_no_nan >= 1.0, dem - 1000.0, dem)
+        ldd = pcr.lddcreate(ldddem, 10.0e35, 10.0e35, 10.0e35, 10.0e35)
+        lddrep = pcr.lddrepair(ldd)
+        # lddmasked = pcr.ifthen(pcr.boolean(mask_raster), lddrep)
+        pcr.report(lddrep, config["Outfiles"]["ldd_map"])
+
     ##riv_pcr = pcr.ifthen(pcr.scalar(mask_raster) >= 1, riv_pcr)
     ##disttocatch = pcr.spread(pcr.nominal(mask_raster), 0.0, 1.0)
     ##demmax = pcr.ifthenelse(pcr.scalar(mask_raster) >= 1.0,demmax,demmax + (pcr.celllength() * 100.0) / disttocatch,)
@@ -360,60 +413,66 @@ if __name__ == "__main__":
     ####################################
     ##    Create streamorder map
     ####################################
-    #
-    # print('Create stream order map')
-    #
-    ## manually adjust maximum streamorder
-    # stream_file = working_folder + '/' + streamorder_map
-    # stro = pcr.streamorder(ldd)
-    # stro_scalar = pcr.scalar(stro)
-    # stro_np = pcr.pcr2numpy(stro_scalar,0.0)
-    #
-    # ist_max = np.amax(stro_np)
-    # factor = ist_max/maxorder
-    #
-    # for i in range(0,rows):
-    #    for j in range(0,cols):
-    #        stro_np[i][j] = np.floor(stro_np[i][j]/factor)
-    #        if stro_np[i][j] == 0.:
-    #            stro_np[i][j] = 1.
-    #
-    # stro_corr = pcr.numpy2pcr(pcr.Scalar,stro_np,10)
-    # stro_masked = pcr.ifthen(pcr.boolean(mask_raster), stro_corr)
-    # pcr.report(stro_masked, stream_file)
-    #
+
+    if (
+        "stream_order" in config["Jobs"]
+        and config.getboolean("Jobs", "stream_order")
+        or "river_width" in config["Jobs"]
+        and config.getboolean("Jobs", "river_width")
+    ):
+        info("Create stream order map")
+
+        # manually adjust maximum streamorder
+        stro = pcr.streamorder(ldd)
+        stro_scalar = pcr.scalar(stro)
+        stro_np = pcr.pcr2numpy(stro_scalar, 0.0)
+
+        ist_max = np.amax(stro_np)
+        factor = ist_max / config.getint("Configuration", "max_stream_order")
+
+        for i in range(0, rows):
+            for j in range(0, cols):
+                stro_np[i][j] = np.floor(stro_np[i][j] / factor)
+                if stro_np[i][j] == 0.0:
+                    stro_np[i][j] = 1.0
+
+        stro_corr = pcr.numpy2pcr(pcr.Scalar, stro_np, 10)
+        stro_masked = pcr.ifthen(pcr.boolean(mask_raster), stro_corr)
+        pcr.report(stro_masked, config["Outfiles"]["streamorder_map"])
+
     ####################################
     ##         River width
     ####################################
-    #
-    ## compute width on basis of strahler order
-    ## Downing et al (2012): Global abundace and size distribution of streams and rivers
-    #
-    # print('Create river width')
-    # width_file = working_folder + '/' + river_width_map
-    #
-    # width_np = np.copy(stro_np)
-    #
-    # for i in range(0,rows):
-    #    for j in range(0,cols):
-    #        width_np[i][j] = 0.542 * math.exp(0.842*width_np[i][j])
-    #
-    # width_pcr = pcr.numpy2pcr(pcr.Scalar,width_np,10)
-    # riv_masked = pcr.ifthen(pcr.boolean(riv_pcr), width_pcr)
-    # pcr.report(riv_masked, width_file)
-    #
+
+    if "river_width" in config["Jobs"] and config.getboolean("Jobs", "river_width"):
+        info("Create river width")
+
+        # compute width on basis of strahler order
+        # Downing et al (2012): Global abundace and size distribution of streams and rivers
+        width_np = np.copy(stro_np)
+
+        for i in range(0, rows):
+            for j in range(0, cols):
+                width_np[i][j] = 0.542 * math.exp(0.842 * width_np[i][j])
+
+        width_pcr = pcr.numpy2pcr(pcr.Scalar, width_np, 10)
+        riv_masked = pcr.ifthen(pcr.boolean(riv_pcr), width_pcr)
+        pcr.report(riv_masked, config["Outfiles"]["river_width_map"])
+
+    info("exit")
+    exit(-1)
+
     ####################################
     ##         Soilmaps
     ####################################
-    #
-    ## create uniform soil map
-    #
-    #
-    # print('Create unifrom soil map')
-    # soil_file = working_folder + '/' + soil_map
-    # soil_np = np.ones((rows,cols))
-    # soil_pcr = pcr.numpy2pcr(pcr.Nominal,soil_np,10)
-    # pcr.report(soil_pcr,soil_file)
+
+    # create uniform soil map
+
+    print("Create unifrom soil map")
+    soil_file = working_folder + "/" + soil_map
+    soil_np = np.ones((rows, cols))
+    soil_pcr = pcr.numpy2pcr(pcr.Nominal, soil_np, 10)
+    pcr.report(soil_pcr, soil_file)
     #
     # print('Create soil thickness map')
     # soil_thick_np = np.ones((rows,cols)) * soil_thickness
@@ -461,39 +520,39 @@ if __name__ == "__main__":
     ####################################
     ##         Landuse maps
     ####################################
-    #
-    # print('Create landuse maps')
-    #
-    # landuse = pcr.readmap(landuse_file)
-    # lookup = np.genfromtxt(landuse_lookup,delimiter = ',')
-    #
-    # lan_np = pcr.pcr2numpy(landuse,0.0)
-    #
-    # N = np.zeros((rows,cols))
-    # Sl = np.zeros((rows,cols))
-    # Swood = np.zeros((rows,cols))
-    # Kext = np.zeros((rows,cols))
-    # RD = np.zeros((rows,cols))
-    #
-    # for i in range(0,rows):
-    #    for j in range(0,cols):
-    #        lu = int(lan_np[i][j])
-    #        diff = lookup[:,0] - lu
-    #        index = np.where(abs(diff) < 0.1)
-    #        N[i][j] = lookup[index[0][0]][1]
-    #        Sl[i][j] = lookup[index[0][0]][2]
-    #        Swood[i][j] = lookup[index[0][0]][3]
-    #        Kext[i][j] = lookup[index[0][0]][4]
-    #        RD[i][j] = lookup[index[0][0]][5]
-    #
-    # N_pcr = pcr.numpy2pcr(pcr.Scalar,N,10)
-    # pcr.report(N_pcr, working_folder + '/' +N_file)
-    # Sl_pcr = pcr.numpy2pcr(pcr.Scalar,Sl,10)
-    # pcr.report(Sl_pcr, working_folder + '/' +Sl_file)
-    # Swood_pcr = pcr.numpy2pcr(pcr.Scalar,Swood,10)
-    # pcr.report(Swood_pcr, working_folder + '/' +Swood_file)
-    # Kext_pcr = pcr.numpy2pcr(pcr.Scalar,Kext,10)
-    # pcr.report(Kext_pcr, working_folder + '/' + Kext_file)
-    # RD_pcr = pcr.numpy2pcr(pcr.Scalar,RD,10)
-    # pcr.report(RD_pcr, working_folder + '/' + rooting_file)
-    # pcr.report(landuse, working_folder + '/' + landuse_map)
+
+    print("Create landuse maps")
+
+    landuse = pcr.readmap(landuse_file)
+    lookup = np.genfromtxt(landuse_lookup, delimiter=",")
+
+    lan_np = pcr.pcr2numpy(landuse, 0.0)
+
+    N = np.zeros((rows, cols))
+    Sl = np.zeros((rows, cols))
+    Swood = np.zeros((rows, cols))
+    Kext = np.zeros((rows, cols))
+    RD = np.zeros((rows, cols))
+
+    for i in range(0, rows):
+        for j in range(0, cols):
+            lu = int(lan_np[i][j])
+            diff = lookup[:, 0] - lu
+            index = np.where(abs(diff) < 0.1)
+            N[i][j] = lookup[index[0][0]][1]
+            Sl[i][j] = lookup[index[0][0]][2]
+            Swood[i][j] = lookup[index[0][0]][3]
+            Kext[i][j] = lookup[index[0][0]][4]
+            RD[i][j] = lookup[index[0][0]][5]
+
+    N_pcr = pcr.numpy2pcr(pcr.Scalar, N, 10)
+    pcr.report(N_pcr, working_folder + "/" + N_file)
+    Sl_pcr = pcr.numpy2pcr(pcr.Scalar, Sl, 10)
+    pcr.report(Sl_pcr, working_folder + "/" + Sl_file)
+    Swood_pcr = pcr.numpy2pcr(pcr.Scalar, Swood, 10)
+    pcr.report(Swood_pcr, working_folder + "/" + Swood_file)
+    Kext_pcr = pcr.numpy2pcr(pcr.Scalar, Kext, 10)
+    pcr.report(Kext_pcr, working_folder + "/" + Kext_file)
+    RD_pcr = pcr.numpy2pcr(pcr.Scalar, RD, 10)
+    pcr.report(RD_pcr, working_folder + "/" + rooting_file)
+    pcr.report(landuse, working_folder + "/" + landuse_map)
