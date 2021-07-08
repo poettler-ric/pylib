@@ -223,7 +223,7 @@ def read_soil_to_dict(soils_folder):
     return thetaS, thetaR, c, ksat_ver
 
 
-if __name__ == "__main__":
+def main():
     # Raster files
     working_folder = r"/data/home/richi/master_thesis/staticmaps"
     # ksat_ver_file = "KsatVer.map"
@@ -559,3 +559,7 @@ if __name__ == "__main__":
     RD_pcr = pcr.numpy2pcr(pcr.Scalar, RD, 10)
     pcr.report(RD_pcr, config["Outfiles"]["rooting_file"])
     pcr.report(landuse, config["Outfiles"]["landuse_map"])
+
+
+if __name__ == "__main__":
+    main()
