@@ -2,7 +2,7 @@
 
 from configparser import ConfigParser, ExtendedInterpolation
 from argparse import ArgumentParser
-from logging import basicConfig, info, INFO
+from logging import basicConfig, info, debug, CRITICAL, ERROR, WARNING, INFO, DEBUG
 from json import loads
 
 import pcraster as pcr
@@ -233,8 +233,6 @@ if __name__ == "__main__":
     # soil_thickness_map = "SoilThickness.map"
     # min_soil_thickness_map = "SoilMinThickness.map"
 
-    basicConfig(level=INFO, format="%(levelname)s %(asctime)s: %(message)s")
-
     DEFAULT_MAX_STREAMORDER = 4
 
     config = ConfigParser(interpolation=ExtendedInterpolation())
@@ -243,12 +241,27 @@ if __name__ == "__main__":
     args = parser.parse_args()
     config.read(args.config_file)
 
+    LOG_LEVEL_MAP = {
+        "critical": CRITICAL,
+        "error": ERROR,
+        "warning": WARNING,
+        "info": INFO,
+        "debug": DEBUG,
+    }
+
     # Settings
     # set maximum streamorder
     if "Configuration" not in config:
         config["Configuration"] = {}
     if "max_stream_order" not in config["Configuration"]:
         config["Configuration"]["max_stream_order"] = str(DEFAULT_MAX_STREAMORDER)
+
+    basicConfig(
+        level=LOG_LEVEL_MAP.get(
+            config.get("Configuration", "log_level", fallback="INFO").lower(), INFO
+        ),
+        format="%(levelname)s %(asctime)s: %(message)s",
+    )
 
     # Soil stuff
     # soils_folder = "/home/iwbworkstation/Desktop/working_dir/50m_data/2_Soil"
@@ -273,11 +286,17 @@ if __name__ == "__main__":
     rows = pcr.clone().nrRows()
     cols = pcr.clone().nrCols()
 
+    debug(f"rows: {rows} cols: {cols} ")
+
     cell_size = pcr.clone().cellSize()
+
+    debug(f"cell_size: {cell_size}")
 
     # coordinates are in upper left corner
     xmin = pcr.clone().west()
     ymin = pcr.clone().north()
+
+    debug(f"xmin: {xmin} ymin: {ymin}")
 
     dem = pcr.readmap(config["Paths"]["masterdem"])
 
