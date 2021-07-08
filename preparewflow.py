@@ -305,6 +305,32 @@ def create_ldd_map(config, dem, riv_corrected):
     return ldd
 
 
+def create_streamorder(config, rows, cols, mask_raster, ldd):
+    """Create streamorder map"""
+
+    # manually adjust maximum streamorder
+    stro = pcr.streamorder(ldd)
+    stro_scalar = pcr.scalar(stro)
+    stro_np = pcr.pcr2numpy(stro_scalar, 0.0)
+
+    ist_max = np.amax(stro_np)
+    factor = ist_max / config.getint(
+        "Configuration", "max_stream_order", fallback=DEFAULT_MAX_STREAMORDER
+    )
+
+    for i in range(0, rows):
+        for j in range(0, cols):
+            stro_np[i][j] = np.floor(stro_np[i][j] / factor)
+            if stro_np[i][j] == 0.0:
+                stro_np[i][j] = 1.0
+
+    stro_corr = pcr.numpy2pcr(pcr.Scalar, stro_np, 10)
+    stro_masked = pcr.ifthen(pcr.boolean(mask_raster), stro_corr)
+    pcr.report(stro_masked, config["Outfiles"]["streamorder_map"])
+
+    return stro_np
+
+
 def main():
     """Main function to prepare the files"""
 
@@ -394,34 +420,11 @@ def main():
         info("Create local drainage direction")
         ldd = create_ldd_map(config, dem, riv_corrected)
 
-    ####################################
-    ##    Create streamorder map
-    ####################################
-
     if config.getboolean("Jobs", "stream_order", fallback=False) or config.getboolean(
         "Jobs", "river_width", fallback=False
     ):
         info("Create stream order map")
-
-        # manually adjust maximum streamorder
-        stro = pcr.streamorder(ldd)
-        stro_scalar = pcr.scalar(stro)
-        stro_np = pcr.pcr2numpy(stro_scalar, 0.0)
-
-        ist_max = np.amax(stro_np)
-        factor = ist_max / config.getint(
-            "Configuration", "max_stream_order", fallback=DEFAULT_MAX_STREAMORDER
-        )
-
-        for i in range(0, rows):
-            for j in range(0, cols):
-                stro_np[i][j] = np.floor(stro_np[i][j] / factor)
-                if stro_np[i][j] == 0.0:
-                    stro_np[i][j] = 1.0
-
-        stro_corr = pcr.numpy2pcr(pcr.Scalar, stro_np, 10)
-        stro_masked = pcr.ifthen(pcr.boolean(mask_raster), stro_corr)
-        pcr.report(stro_masked, config["Outfiles"]["streamorder_map"])
+        stro_np = create_streamorder(config, rows, cols, mask_raster, ldd)
 
     ####################################
     ##         River width
