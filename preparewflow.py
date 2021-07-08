@@ -331,6 +331,23 @@ def create_streamorder(config, rows, cols, mask_raster, ldd):
     return stro_np
 
 
+def create_river_width(config, rows, cols, riv_pcr, stro_np):
+    """
+    Compute width on basis of strahler order
+    Downing et al (2012): Global abundace and size distribution of streams and rivers.
+    """
+
+    width_np = np.copy(stro_np)
+
+    for i in range(0, rows):
+        for j in range(0, cols):
+            width_np[i][j] = 0.542 * math.exp(0.842 * width_np[i][j])
+
+    width_pcr = pcr.numpy2pcr(pcr.Scalar, width_np, 10)
+    riv_masked = pcr.ifthen(pcr.boolean(riv_pcr), width_pcr)
+    pcr.report(riv_masked, config["Outfiles"]["river_width_map"])
+
+
 def main():
     """Main function to prepare the files"""
 
@@ -426,24 +443,9 @@ def main():
         info("Create stream order map")
         stro_np = create_streamorder(config, rows, cols, mask_raster, ldd)
 
-    ####################################
-    ##         River width
-    ####################################
-
     if config.getboolean("Jobs", "river_width", fallback=False):
         info("Create river width")
-
-        # compute width on basis of strahler order
-        # Downing et al (2012): Global abundace and size distribution of streams and rivers
-        width_np = np.copy(stro_np)
-
-        for i in range(0, rows):
-            for j in range(0, cols):
-                width_np[i][j] = 0.542 * math.exp(0.842 * width_np[i][j])
-
-        width_pcr = pcr.numpy2pcr(pcr.Scalar, width_np, 10)
-        riv_masked = pcr.ifthen(pcr.boolean(riv_pcr), width_pcr)
-        pcr.report(riv_masked, config["Outfiles"]["river_width_map"])
+        create_river_width(config, rows, cols, riv_pcr, stro_np)
 
     ####################################
     ##         Soilmaps
