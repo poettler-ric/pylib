@@ -337,17 +337,8 @@ def main():
 
     dem = pcr.readmap(config["Paths"]["masterdem"])
 
-    ####################################
-    ##  Generate map of cell centers
-    ####################################
-
-    # Generate map of cell centers
     debug("Determine cell centers")
     cell_centers = init_cellcenter(rows, cols, cell_size, xmin, ymin)
-
-    ####################################
-    ##  Generate catchment mask from shape
-    ####################################
 
     if (
         config.getboolean("Jobs", "catchment_mask", fallback=False)
@@ -356,10 +347,6 @@ def main():
     ):
         info("Create catchment mask")
         mask_raster = create_catchment_mask(config, rows, cols, cell_centers)
-
-    ####################################
-    ##  Generate outlet point
-    ####################################
 
     if config.getboolean("Jobs", "outlet_map", fallback=False):
         info("Generate outlet map")
