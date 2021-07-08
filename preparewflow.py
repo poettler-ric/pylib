@@ -350,12 +350,9 @@ def main():
     ####################################
 
     if (
-        "catchment_mask" in config["Jobs"]
-        and config.getboolean("Jobs", "catchment_mask")
-        or "stream_order" in config["Jobs"]
-        and config.getboolean("Jobs", "stream_order")
-        or "river_width" in config["Jobs"]
-        and config.getboolean("Jobs", "river_width")
+        config.getboolean("Jobs", "catchment_mask", fallback=False)
+        or config.getboolean("Jobs", "stream_order", fallback=False)
+        or config.getboolean("Jobs", "river_width", fallback=False)
     ):
         info("Create catchment mask")
         mask_raster = create_catchment_mask(config, rows, cols, cell_centers)
@@ -364,7 +361,7 @@ def main():
     ##  Generate outlet point
     ####################################
 
-    if "outlet_map" in config["Jobs"] and config.getboolean("Jobs", "outlet_map"):
+    if config.getboolean("Jobs", "outlet_map", fallback=False):
         info("Generate outlet map")
         create_outlet_map(config, rows, cols, cell_size, cell_centers)
 
@@ -373,14 +370,10 @@ def main():
     ####################################
 
     if (
-        "river_burn" in config["Jobs"]
-        and config.getboolean("Jobs", "river_burn")
-        or "ldd_map" in config["Jobs"]
-        and config.getboolean("Jobs", "ldd_map")
-        or "stream_order" in config["Jobs"]
-        and config.getboolean("Jobs", "stream_order")
-        or "river_width" in config["Jobs"]
-        and config.getboolean("Jobs", "river_width")
+        config.getboolean("Jobs", "river_burn", fallback=False)
+        or config.getboolean("Jobs", "ldd_map", fallback=False)
+        or config.getboolean("Jobs", "stream_order", fallback=False)
+        or config.getboolean("Jobs", "river_width", fallback=False)
     ):
         info("Burn in river")
 
@@ -398,12 +391,9 @@ def main():
     ####################################
 
     if (
-        "ldd_map" in config["Jobs"]
-        and config.getboolean("Jobs", "ldd_map")
-        or "stream_order" in config["Jobs"]
-        and config.getboolean("Jobs", "stream_order")
-        or "river_width" in config["Jobs"]
-        and config.getboolean("Jobs", "river_width")
+        config.getboolean("Jobs", "ldd_map", fallback=False)
+        or config.getboolean("Jobs", "stream_order", fallback=False)
+        or config.getboolean("Jobs", "river_width", fallback=False)
     ):
         info("Create local drainage direction")
 
@@ -428,11 +418,8 @@ def main():
     ##    Create streamorder map
     ####################################
 
-    if (
-        "stream_order" in config["Jobs"]
-        and config.getboolean("Jobs", "stream_order")
-        or "river_width" in config["Jobs"]
-        and config.getboolean("Jobs", "river_width")
+    if config.getboolean("Jobs", "stream_order", fallback=False) or config.getboolean(
+        "Jobs", "river_width", fallback=False
     ):
         info("Create stream order map")
 
@@ -458,7 +445,7 @@ def main():
     ##         River width
     ####################################
 
-    if "river_width" in config["Jobs"] and config.getboolean("Jobs", "river_width"):
+    if config.getboolean("Jobs", "river_width", fallback=False):
         info("Create river width")
 
         # compute width on basis of strahler order
@@ -477,7 +464,7 @@ def main():
     ##         Soilmaps
     ####################################
 
-    if "soil_map" in config["Jobs"] and config.getboolean("Jobs", "soil_map"):
+    if config.getboolean("Jobs", "soil_map", fallback=False):
         info("Create unifrom soil map")
 
         soil_np = np.ones((rows, cols))
