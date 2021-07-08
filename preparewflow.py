@@ -285,12 +285,6 @@ def main():
 
     config = ConfigParser(interpolation=ExtendedInterpolation())
     config.read(args.config_file)
-    if "Configuration" not in config:
-        config["Configuration"] = {}
-
-    # set maximum streamorder
-    if "max_stream_order" not in config["Configuration"]:
-        config["Configuration"]["max_stream_order"] = str(DEFAULT_MAX_STREAMORDER)
 
     logging.basicConfig(
         level=LOG_LEVEL_MAP.get(
@@ -416,7 +410,9 @@ def main():
         stro_np = pcr.pcr2numpy(stro_scalar, 0.0)
 
         ist_max = np.amax(stro_np)
-        factor = ist_max / config.getint("Configuration", "max_stream_order")
+        factor = ist_max / config.getint(
+            "Configuration", "max_stream_order", fallback=DEFAULT_MAX_STREAMORDER
+        )
 
         for i in range(0, rows):
             for j in range(0, cols):
