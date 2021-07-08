@@ -506,9 +506,6 @@ def main():
 
     debug(f"xmin: {xmin} ymin: {ymin}")
 
-    dem = pcr.readmap(config["Paths"]["masterdem"])
-
-    debug("Determine cell centers")
     cell_centers = init_cellcenter(rows, cols, cell_size, xmin, ymin)
 
     if (
@@ -536,6 +533,7 @@ def main():
         or config.getboolean("Jobs", "stream_order", fallback=False)
         or config.getboolean("Jobs", "river_width", fallback=False)
     ):
+        dem = pcr.readmap(config["Paths"]["masterdem"])
         ldd = create_ldd_map(config, dem, riv_corrected)
 
     if config.getboolean("Jobs", "stream_order", fallback=False) or config.getboolean(
