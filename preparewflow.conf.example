@@ -1,0 +1,45 @@
+[Configuration]
+log_level = debug
+
+[Jobs]
+catchment_mask = no
+outlet_map = no
+river_burn = no
+ldd_map = no
+stream_order = no
+river_width = no
+soil_map = no
+land_use_map = yes
+
+[Outlets]
+mur = [520761, 5251123]
+
+[Paths]
+working_folder = /data/home/richi/master_thesis/staticmaps
+masterdem = ${working_folder}/wflow_dem.map
+
+ksat_ver_file = ${working_folder}/KsatVer.map
+thetaS_file = ${working_folder}/ThetaS.map
+thetaR_file = ${working_folder}/ThetaR.map
+N_file = ${working_folder}/N.map
+soil_thickness_map = ${working_folder}/SoilThickness.map
+min_soil_thickness_map = ${working_folder}/SoilMinThickness.map
+
+[Shapefiles]
+shape_catchment = ${Paths:working_folder}/catchment_muerz.shp
+rivershape = ${Paths:working_folder}/river_skeleton.shp
+
+[Outfiles]
+catchment_mask = ${Paths:working_folder}/wflow_catchment.map
+outlet_map = ${Paths:working_folder}/wflow_outlet.map
+river_burn = ${Paths:working_folder}/wflow_riverburnin.map
+ldd_map = ${Paths:working_folder}/wflow_ldd.map
+streamorder_map = ${Paths:working_folder}/wflow_streamorder.map
+river_width_map = ${Paths:working_folder}/wflow_riverwidth.map
+soil_map = ${Paths:working_folder}/wflow_soil.map
+M_file = ${Paths:working_folder}/M.map
+Sl_file = ${Paths:working_folder}/Sl.map
+Swood_file = ${Paths:working_folder}/Swood.map
+Kext_file = ${Paths:working_folder}/Kext.map
+rooting_file = ${Paths:working_folder}/RootingDepth.map
+landuse_map = ${working_folder}/wflow_landuse.map
