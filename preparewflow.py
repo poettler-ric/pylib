@@ -282,6 +282,29 @@ def create_river_burn(config, rows, cols, cell_size, cell_centers):
     return riv_corrected, riv_pcr
 
 
+def create_ldd_map(config, dem, riv_corrected):
+    """Create local drainage direction map"""
+
+    # removing nans
+    riv_where_nan = np.isnan(riv_corrected)
+    riv_corrected[riv_where_nan] = 0.0
+    riv_pcr_no_nan = pcr.numpy2pcr(pcr.Scalar, riv_corrected, 10)
+
+    # determine regional slope where the river should run
+    # ldddem = pcr.ifthen(pcr.boolean(mask_raster), dem)
+    ldddem = pcr.ifthenelse(riv_pcr_no_nan >= 1.0, dem - 1000.0, dem)
+    ldd = pcr.lddcreate(ldddem, 10.0e35, 10.0e35, 10.0e35, 10.0e35)
+    lddrep = pcr.lddrepair(ldd)
+    # lddmasked = pcr.ifthen(pcr.boolean(mask_raster), lddrep)
+    pcr.report(lddrep, config["Outfiles"]["ldd_map"])
+
+    ##riv_pcr = pcr.ifthen(pcr.scalar(mask_raster) >= 1, riv_pcr)
+    ##disttocatch = pcr.spread(pcr.nominal(mask_raster), 0.0, 1.0)
+    ##demmax = pcr.ifthenelse(pcr.scalar(mask_raster) >= 1.0,demmax,demmax + (pcr.celllength() * 100.0) / disttocatch,)
+
+    return ldd
+
+
 def main():
     """Main function to prepare the files"""
 
@@ -363,34 +386,14 @@ def main():
             config, rows, cols, cell_size, cell_centers
         )
 
-    ####################################
-    ##       Create ldd map
-    ####################################
-
     if (
         config.getboolean("Jobs", "ldd_map", fallback=False)
         or config.getboolean("Jobs", "stream_order", fallback=False)
         or config.getboolean("Jobs", "river_width", fallback=False)
     ):
         info("Create local drainage direction")
+        ldd = create_ldd_map(config, dem, riv_corrected)
 
-        # removing nans
-        riv_where_nan = np.isnan(riv_corrected)
-        riv_corrected[riv_where_nan] = 0.0
-        riv_pcr_no_nan = pcr.numpy2pcr(pcr.Scalar, riv_corrected, 10)
-
-        # determine regional slope where the river should run
-        # ldddem = pcr.ifthen(pcr.boolean(mask_raster), dem)
-        ldddem = pcr.ifthenelse(riv_pcr_no_nan >= 1.0, dem - 1000.0, dem)
-        ldd = pcr.lddcreate(ldddem, 10.0e35, 10.0e35, 10.0e35, 10.0e35)
-        lddrep = pcr.lddrepair(ldd)
-        # lddmasked = pcr.ifthen(pcr.boolean(mask_raster), lddrep)
-        pcr.report(lddrep, config["Outfiles"]["ldd_map"])
-
-    ##riv_pcr = pcr.ifthen(pcr.scalar(mask_raster) >= 1, riv_pcr)
-    ##disttocatch = pcr.spread(pcr.nominal(mask_raster), 0.0, 1.0)
-    ##demmax = pcr.ifthenelse(pcr.scalar(mask_raster) >= 1.0,demmax,demmax + (pcr.celllength() * 100.0) / disttocatch,)
-    #
     ####################################
     ##    Create streamorder map
     ####################################
