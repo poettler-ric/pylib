@@ -223,6 +223,20 @@ def read_soil_to_dict(soils_folder):
     return thetaS, thetaR, c, ksat_ver
 
 
+def create_outlet_map(config, rows, cols, cell_size, cell_centers):
+    """Creates the outlet map"""
+
+    outlets = []
+    for _, coords in config["Outlets"].items():
+        outlets.append(loads(coords))
+
+    ## burn in river and stuff like that
+    outlet_array = burn_coords(cell_centers, rows, cols, outlets, cell_size)
+
+    outlet_pcr = pcr.numpy2pcr(pcr.Nominal, outlet_array, 10)
+    pcr.report(outlet_pcr, config["Outfiles"]["outlet_map"])
+
+
 def main():
     # Raster files
     working_folder = r"/data/home/richi/master_thesis/staticmaps"
@@ -339,16 +353,7 @@ def main():
 
     if "outlet_map" in config["Jobs"] and config.getboolean("Jobs", "outlet_map"):
         info("Generate outlet map")
-
-        outlets = []
-        for name, coords in config["Outlets"].items():
-            outlets.append(loads(coords))
-
-        ## burn in river and stuff like that
-        outlet_array = burn_coords(cell_centers, rows, cols, outlets, cell_size)
-
-        outlet_pcr = pcr.numpy2pcr(pcr.Nominal, outlet_array, 10)
-        pcr.report(outlet_pcr, config["Outfiles"]["outlet_map"])
+        create_outlet_map(config, rows, cols, cell_size, cell_centers)
 
     ####################################
     ##  Generate river burn in
