@@ -267,6 +267,21 @@ def create_catchment_mask(config, rows, cols, cell_centers):
     return mask_raster
 
 
+def create_river_burn(config, rows, cols, cell_size, cell_centers):
+    """Create river burnin map"""
+
+    riv_shape = shapefile.Reader(config["Shapefiles"]["rivershape"])
+    riv_points = generate_river_points(riv_shape, cell_size)
+    riv_array = burn_in_river(cell_centers, rows, cols, riv_points, cell_size)
+    riv_corrected = gen_river_connectivity(riv_array, rows, cols)
+    ## turn off correction
+    riv_corrected = riv_array
+    riv_pcr = pcr.numpy2pcr(pcr.Nominal, riv_corrected, 10)
+    pcr.report(riv_pcr, config["Outfiles"]["river_burn"])
+
+    return riv_corrected, riv_pcr
+
+
 def main():
     """Main function to prepare the files"""
 
@@ -346,10 +361,6 @@ def main():
         info("Generate outlet map")
         create_outlet_map(config, rows, cols, cell_size, cell_centers)
 
-    ####################################
-    ##  Generate river burn in
-    ####################################
-
     if (
         config.getboolean("Jobs", "river_burn", fallback=False)
         or config.getboolean("Jobs", "ldd_map", fallback=False)
@@ -357,15 +368,9 @@ def main():
         or config.getboolean("Jobs", "river_width", fallback=False)
     ):
         info("Burn in river")
-
-        riv_shape = shapefile.Reader(config["Shapefiles"]["rivershape"])
-        riv_points = generate_river_points(riv_shape, cell_size)
-        riv_array = burn_in_river(cell_centers, rows, cols, riv_points, cell_size)
-        riv_corrected = gen_river_connectivity(riv_array, rows, cols)
-        ## turn off correction
-        riv_corrected = riv_array
-        riv_pcr = pcr.numpy2pcr(pcr.Nominal, riv_corrected, 10)
-        pcr.report(riv_pcr, config["Outfiles"]["river_burn"])
+        riv_corrected, riv_pcr = create_river_burn(
+            config, rows, cols, cell_size, cell_centers
+        )
 
     ####################################
     ##       Create ldd map
