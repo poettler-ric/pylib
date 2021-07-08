@@ -348,6 +348,57 @@ def create_river_width(config, rows, cols, riv_pcr, stro_np):
     pcr.report(riv_masked, config["Outfiles"]["river_width_map"])
 
 
+def create_soil_maps(config, rows, cols):
+    """Create soil maps"""
+
+    soil_np = np.ones((rows, cols))
+    soil_pcr = pcr.numpy2pcr(pcr.Nominal, soil_np, 10)
+    pcr.report(soil_pcr, config["Outfiles"]["river_width_map"])
+
+    # print('Create soil thickness map')
+    # soil_thick_np = np.ones((rows,cols)) * soil_thickness
+    # soil_thick_pcr = pcr.numpy2pcr(pcr.Scalar,soil_thick_np,10)
+    # pcr.report(soil_thick_pcr, working_folder + '/' + soil_thickness_map)
+    # pcr.report(soil_thick_pcr, working_folder + '/' + min_soil_thickness_map)
+    #
+    # thetaS, thetaR, c, ksat_ver = read_soil_to_dict(soils_folder)
+    #
+    # print('Create thetaS')
+    # thetaS_pcr = pcr.numpy2pcr(pcr.Scalar,np.copy(thetaS[:,:,0]),10)
+    # out_thetaS = working_folder + '/' + thetaS_file
+    # pcr.report(thetaS_pcr, out_thetaS)
+    # print('Create thetaR')
+    # thetaR_pcr = pcr.numpy2pcr(pcr.Scalar,np.copy(thetaR[:,:,0]),10)
+    # out_thetaR = working_folder + '/' + thetaR_file
+    # pcr.report(thetaR_pcr, out_thetaR)
+    #
+    # print('ksatver')
+    # ksatver_pcr = pcr.numpy2pcr(pcr.Scalar,np.copy(ksat_ver[:,:,0]),10)
+    # out_ksat_ver = working_folder + '/' + ksat_ver_file
+    # pcr.report(ksatver_pcr, out_ksat_ver)
+    #
+    # print('Create M')
+    # M = np.zeros((rows,cols))
+    # for i in range(0,rows):
+    #    for j in range(0,cols):
+    #        ks_depth = ksat_ver[i,j,:]
+    #        y = ks_depth/ksat_ver[i,j,0]
+    #        fit = np.polyfit(soil_depth, np.log(y), 1, w=np.sqrt(y))
+    #        f = -fit[0]
+    #        M[i][j] = (thetaS[i][j][0]-thetaR[i][j][0])/f
+    #
+    # M_pcr = pcr.numpy2pcr(pcr.Scalar,M,10)
+    # out_ksat_ver = working_folder + '/' + M_file
+    # pcr.report(M_pcr, out_ksat_ver)
+    #
+    # print('Create c')
+    #
+    # for i in range(0,len(take_c)):
+    #    c_pcr = pcr.numpy2pcr(pcr.Scalar,np.copy(c[:,:,take_c[i]]),10)
+    #    out_c = working_folder + '/c_' + str(i) + '.map'
+    #    pcr.report(c_pcr, out_c)
+
+
 def main():
     """Main function to prepare the files"""
 
@@ -447,60 +498,10 @@ def main():
         info("Create river width")
         create_river_width(config, rows, cols, riv_pcr, stro_np)
 
-    ####################################
-    ##         Soilmaps
-    ####################################
-
     if config.getboolean("Jobs", "soil_map", fallback=False):
         info("Create unifrom soil map")
+        create_soil_maps(config, rows, cols)
 
-        soil_np = np.ones((rows, cols))
-        soil_pcr = pcr.numpy2pcr(pcr.Nominal, soil_np, 10)
-        pcr.report(soil_pcr, config["Outfiles"]["river_width_map"])
-
-    # print('Create soil thickness map')
-    # soil_thick_np = np.ones((rows,cols)) * soil_thickness
-    # soil_thick_pcr = pcr.numpy2pcr(pcr.Scalar,soil_thick_np,10)
-    # pcr.report(soil_thick_pcr, working_folder + '/' + soil_thickness_map)
-    # pcr.report(soil_thick_pcr, working_folder + '/' + min_soil_thickness_map)
-    #
-    # thetaS, thetaR, c, ksat_ver = read_soil_to_dict(soils_folder)
-    #
-    # print('Create thetaS')
-    # thetaS_pcr = pcr.numpy2pcr(pcr.Scalar,np.copy(thetaS[:,:,0]),10)
-    # out_thetaS = working_folder + '/' + thetaS_file
-    # pcr.report(thetaS_pcr, out_thetaS)
-    # print('Create thetaR')
-    # thetaR_pcr = pcr.numpy2pcr(pcr.Scalar,np.copy(thetaR[:,:,0]),10)
-    # out_thetaR = working_folder + '/' + thetaR_file
-    # pcr.report(thetaR_pcr, out_thetaR)
-    #
-    # print('ksatver')
-    # ksatver_pcr = pcr.numpy2pcr(pcr.Scalar,np.copy(ksat_ver[:,:,0]),10)
-    # out_ksat_ver = working_folder + '/' + ksat_ver_file
-    # pcr.report(ksatver_pcr, out_ksat_ver)
-    #
-    # print('Create M')
-    # M = np.zeros((rows,cols))
-    # for i in range(0,rows):
-    #    for j in range(0,cols):
-    #        ks_depth = ksat_ver[i,j,:]
-    #        y = ks_depth/ksat_ver[i,j,0]
-    #        fit = np.polyfit(soil_depth, np.log(y), 1, w=np.sqrt(y))
-    #        f = -fit[0]
-    #        M[i][j] = (thetaS[i][j][0]-thetaR[i][j][0])/f
-    #
-    # M_pcr = pcr.numpy2pcr(pcr.Scalar,M,10)
-    # out_ksat_ver = working_folder + '/' + M_file
-    # pcr.report(M_pcr, out_ksat_ver)
-    #
-    # print('Create c')
-    #
-    # for i in range(0,len(take_c)):
-    #    c_pcr = pcr.numpy2pcr(pcr.Scalar,np.copy(c[:,:,take_c[i]]),10)
-    #    out_c = working_folder + '/c_' + str(i) + '.map'
-    #    pcr.report(c_pcr, out_c)
-    #
     ####################################
     ##         Landuse maps
     ####################################
