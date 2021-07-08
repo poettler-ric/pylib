@@ -286,7 +286,7 @@ if __name__ == "__main__":
     rows = pcr.clone().nrRows()
     cols = pcr.clone().nrCols()
 
-    debug(f"rows: {rows} cols: {cols} ")
+    debug(f"rows: {rows} cols: {cols}")
 
     cell_size = pcr.clone().cellSize()
 
