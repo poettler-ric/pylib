@@ -237,6 +237,23 @@ def create_outlet_map(config, rows, cols, cell_size, cell_centers):
     pcr.report(outlet_pcr, config["Outfiles"]["outlet_map"])
 
 
+def create_catchment_mask(config, rows, cols, cell_centers):
+    """Crete the catchment mask"""
+
+    # reads the catchment shapefile
+    shape = shapefile.Reader(config["Shapefiles"]["shape_catchment"])
+    feature = shape.shapeRecords()[0]
+    # contains shape geometry
+    first = feature.shape.__geo_interface__
+    # creates a numpy array of the mask
+    raster = gen_inpoly(first, cell_centers, rows, cols)
+    # write raster out
+    mask_raster = pcr.numpy2pcr(pcr.Nominal, raster, 10)
+    pcr.report(mask_raster, config["Outfiles"]["catchment_mask"])
+
+    return mask_raster
+
+
 def main():
     # Raster files
     working_folder = r"/data/home/richi/master_thesis/staticmaps"
@@ -335,17 +352,7 @@ def main():
         and config.getboolean("Jobs", "river_width")
     ):
         info("Create catchment mask")
-
-        # reads the catchment shapefile
-        shape = shapefile.Reader(config["Shapefiles"]["shape_catchment"])
-        feature = shape.shapeRecords()[0]
-        # contains shape geometry
-        first = feature.shape.__geo_interface__
-        # creates a numpy array of the mask
-        raster = gen_inpoly(first, cell_centers, rows, cols)
-        # write raster out
-        mask_raster = pcr.numpy2pcr(pcr.Nominal, raster, 10)
-        pcr.report(mask_raster, config["Outfiles"]["catchment_mask"])
+        mask_raster = create_catchment_mask(config, rows, cols, cell_centers)
 
     ####################################
     ##  Generate outlet point
