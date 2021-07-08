@@ -226,29 +226,12 @@ def read_soil_to_dict(soils_folder):
 if __name__ == "__main__":
     # Raster files
     working_folder = r"/data/home/richi/master_thesis/staticmaps"
-    # masterdem = "wflow_dem.map"
-    # catchment_mask = "wflow_catchment.map"
-    # outlet_map = "wflow_outlet.map"
-    # river_burn = "wflow_riverburnin.map"
-    # ldd_map = "wflow_ldd.map"
-    # streamorder_map = "wflow_streamorder.map"
-    # river_width_map = "wflow_riverwidth.map"
-    soil_map = "wflow_soil.map"
-    landuse_map = "wflow_landuse.map"
     # ksat_ver_file = "KsatVer.map"
     # thetaS_file = "ThetaS.map"
     # thetaR_file = "ThetaR.map"
-    M_file = "M.map"
-    N_file = "N.map"
-    Sl_file = "Sl.map"
-    Swood_file = "Swood.map"
-    Kext_file = "Kext.map"
-    rooting_file = "RootingDepth.map"
-    # landuse_wflow = "wflow_landuse.map"
+    # M_file = "M.map"
     # soil_thickness_map = "SoilThickness.map"
     # min_soil_thickness_map = "SoilMinThickness.map"
-
-    from sys import exit
 
     basicConfig(level=INFO, format="%(levelname)s %(asctime)s: %(message)s")
 
@@ -281,12 +264,6 @@ if __name__ == "__main__":
     # soil_thickness = 2000.0
     # takes c from which layers
     # take_c = [1, 2, 3, 4]
-
-    # Landuse stuff
-    # landuse_file = r"/home/iwbworkstation/Desktop/working_dir/50m_data/4_Landuse/landuse_map_UTM33N.map"
-    # landuse_lookup = (
-    #     r"/home/iwbworkstation/Desktop/working_dir/50m_data/4_Landuse/landuse_lookup"
-    # )
 
     pcr.setglobaloption("unitcell")
 
@@ -459,21 +436,17 @@ if __name__ == "__main__":
         riv_masked = pcr.ifthen(pcr.boolean(riv_pcr), width_pcr)
         pcr.report(riv_masked, config["Outfiles"]["river_width_map"])
 
-    info("exit")
-    exit(-1)
-
     ####################################
     ##         Soilmaps
     ####################################
 
-    # create uniform soil map
+    if "soil_map" in config["Jobs"] and config.getboolean("Jobs", "soil_map"):
+        info("Create unifrom soil map")
 
-    print("Create unifrom soil map")
-    soil_file = working_folder + "/" + soil_map
-    soil_np = np.ones((rows, cols))
-    soil_pcr = pcr.numpy2pcr(pcr.Nominal, soil_np, 10)
-    pcr.report(soil_pcr, soil_file)
-    #
+        soil_np = np.ones((rows, cols))
+        soil_pcr = pcr.numpy2pcr(pcr.Nominal, soil_np, 10)
+        pcr.report(soil_pcr, config["Outfiles"]["river_width_map"])
+
     # print('Create soil thickness map')
     # soil_thick_np = np.ones((rows,cols)) * soil_thickness
     # soil_thick_pcr = pcr.numpy2pcr(pcr.Scalar,soil_thick_np,10)
@@ -521,7 +494,18 @@ if __name__ == "__main__":
     ##         Landuse maps
     ####################################
 
-    print("Create landuse maps")
+    info("exit")
+    from sys import exit
+
+    exit(-1)
+
+    info("Create landuse maps")
+
+    # Landuse stuff
+    landuse_file = r"/home/iwbworkstation/Desktop/working_dir/50m_data/4_Landuse/landuse_map_UTM33N.map"
+    landuse_lookup = (
+        r"/home/iwbworkstation/Desktop/working_dir/50m_data/4_Landuse/landuse_lookup"
+    )
 
     landuse = pcr.readmap(landuse_file)
     lookup = np.genfromtxt(landuse_lookup, delimiter=",")
@@ -546,13 +530,13 @@ if __name__ == "__main__":
             RD[i][j] = lookup[index[0][0]][5]
 
     N_pcr = pcr.numpy2pcr(pcr.Scalar, N, 10)
-    pcr.report(N_pcr, working_folder + "/" + N_file)
+    pcr.report(N_pcr, config["Outfiles"]["N_file"])
     Sl_pcr = pcr.numpy2pcr(pcr.Scalar, Sl, 10)
-    pcr.report(Sl_pcr, working_folder + "/" + Sl_file)
+    pcr.report(Sl_pcr, config["Outfiles"]["Sl_file"])
     Swood_pcr = pcr.numpy2pcr(pcr.Scalar, Swood, 10)
-    pcr.report(Swood_pcr, working_folder + "/" + Swood_file)
+    pcr.report(Swood_pcr, config["Outfiles"]["Swood_file"])
     Kext_pcr = pcr.numpy2pcr(pcr.Scalar, Kext, 10)
-    pcr.report(Kext_pcr, working_folder + "/" + Kext_file)
+    pcr.report(Kext_pcr, config["Outfiles"]["Kext_file"])
     RD_pcr = pcr.numpy2pcr(pcr.Scalar, RD, 10)
-    pcr.report(RD_pcr, working_folder + "/" + rooting_file)
-    pcr.report(landuse, working_folder + "/" + landuse_map)
+    pcr.report(RD_pcr, config["Outfiles"]["rooting_file"])
+    pcr.report(landuse, config["Outfiles"]["landuse_map"])
