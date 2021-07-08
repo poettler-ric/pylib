@@ -399,6 +399,52 @@ def create_soil_maps(config, rows, cols):
     #    pcr.report(c_pcr, out_c)
 
 
+def create_land_use(config, rows, cols):
+    """Creates land use maps"""
+
+    # FIXME: deactivate for now
+    return
+
+    landuse_file = r"/home/iwbworkstation/Desktop/working_dir/50m_data/4_Landuse/landuse_map_UTM33N.map"
+    landuse_lookup = (
+        r"/home/iwbworkstation/Desktop/working_dir/50m_data/4_Landuse/landuse_lookup"
+    )
+
+    landuse = pcr.readmap(landuse_file)
+    lookup = np.genfromtxt(landuse_lookup, delimiter=",")
+
+    lan_np = pcr.pcr2numpy(landuse, 0.0)
+
+    N = np.zeros((rows, cols))
+    Sl = np.zeros((rows, cols))
+    Swood = np.zeros((rows, cols))
+    Kext = np.zeros((rows, cols))
+    RD = np.zeros((rows, cols))
+
+    for i in range(0, rows):
+        for j in range(0, cols):
+            lu = int(lan_np[i][j])
+            diff = lookup[:, 0] - lu
+            index = np.where(abs(diff) < 0.1)
+            N[i][j] = lookup[index[0][0]][1]
+            Sl[i][j] = lookup[index[0][0]][2]
+            Swood[i][j] = lookup[index[0][0]][3]
+            Kext[i][j] = lookup[index[0][0]][4]
+            RD[i][j] = lookup[index[0][0]][5]
+
+    N_pcr = pcr.numpy2pcr(pcr.Scalar, N, 10)
+    pcr.report(N_pcr, config["Outfiles"]["N_file"])
+    Sl_pcr = pcr.numpy2pcr(pcr.Scalar, Sl, 10)
+    pcr.report(Sl_pcr, config["Outfiles"]["Sl_file"])
+    Swood_pcr = pcr.numpy2pcr(pcr.Scalar, Swood, 10)
+    pcr.report(Swood_pcr, config["Outfiles"]["Swood_file"])
+    Kext_pcr = pcr.numpy2pcr(pcr.Scalar, Kext, 10)
+    pcr.report(Kext_pcr, config["Outfiles"]["Kext_file"])
+    RD_pcr = pcr.numpy2pcr(pcr.Scalar, RD, 10)
+    pcr.report(RD_pcr, config["Outfiles"]["rooting_file"])
+    pcr.report(landuse, config["Outfiles"]["landuse_map"])
+
+
 def main():
     """Main function to prepare the files"""
 
@@ -502,56 +548,9 @@ def main():
         info("Create unifrom soil map")
         create_soil_maps(config, rows, cols)
 
-    ####################################
-    ##         Landuse maps
-    ####################################
-
-    debug("exit")
-    from sys import exit
-
-    exit(-1)
-
-    info("Create landuse maps")
-
-    # Landuse stuff
-    landuse_file = r"/home/iwbworkstation/Desktop/working_dir/50m_data/4_Landuse/landuse_map_UTM33N.map"
-    landuse_lookup = (
-        r"/home/iwbworkstation/Desktop/working_dir/50m_data/4_Landuse/landuse_lookup"
-    )
-
-    landuse = pcr.readmap(landuse_file)
-    lookup = np.genfromtxt(landuse_lookup, delimiter=",")
-
-    lan_np = pcr.pcr2numpy(landuse, 0.0)
-
-    N = np.zeros((rows, cols))
-    Sl = np.zeros((rows, cols))
-    Swood = np.zeros((rows, cols))
-    Kext = np.zeros((rows, cols))
-    RD = np.zeros((rows, cols))
-
-    for i in range(0, rows):
-        for j in range(0, cols):
-            lu = int(lan_np[i][j])
-            diff = lookup[:, 0] - lu
-            index = np.where(abs(diff) < 0.1)
-            N[i][j] = lookup[index[0][0]][1]
-            Sl[i][j] = lookup[index[0][0]][2]
-            Swood[i][j] = lookup[index[0][0]][3]
-            Kext[i][j] = lookup[index[0][0]][4]
-            RD[i][j] = lookup[index[0][0]][5]
-
-    N_pcr = pcr.numpy2pcr(pcr.Scalar, N, 10)
-    pcr.report(N_pcr, config["Outfiles"]["N_file"])
-    Sl_pcr = pcr.numpy2pcr(pcr.Scalar, Sl, 10)
-    pcr.report(Sl_pcr, config["Outfiles"]["Sl_file"])
-    Swood_pcr = pcr.numpy2pcr(pcr.Scalar, Swood, 10)
-    pcr.report(Swood_pcr, config["Outfiles"]["Swood_file"])
-    Kext_pcr = pcr.numpy2pcr(pcr.Scalar, Kext, 10)
-    pcr.report(Kext_pcr, config["Outfiles"]["Kext_file"])
-    RD_pcr = pcr.numpy2pcr(pcr.Scalar, RD, 10)
-    pcr.report(RD_pcr, config["Outfiles"]["rooting_file"])
-    pcr.report(landuse, config["Outfiles"]["landuse_map"])
+    if config.getboolean("Jobs", "land_use_map", fallback=False):
+        info("Create landuse maps")
+        create_land_use(config, rows, cols)
 
 
 if __name__ == "__main__":
