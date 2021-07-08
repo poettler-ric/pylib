@@ -508,46 +508,52 @@ def main():
 
     cell_centers = init_cellcenter(rows, cols, cell_size, xmin, ymin)
 
-    if (
-        config.getboolean("Jobs", "catchment_mask", fallback=False)
-        or config.getboolean("Jobs", "stream_order", fallback=False)
-        or config.getboolean("Jobs", "river_width", fallback=False)
-    ):
+    # resolve dependencies
+    need_outlet_map = config.getboolean("Jobs", "outlet_map", fallback=False)
+    need_land_use = config.getboolean("Jobs", "land_use_map", fallback=False)
+    need_soil_map = config.getboolean("Jobs", "soil_map", fallback=False)
+    need_river_width = config.getboolean("Jobs", "river_width", fallback=False)
+    need_stream_order = (
+        config.getboolean("Jobs", "stream_order", fallback=False) or need_river_width
+    )
+    need_ldd_map = (
+        config.getboolean("Jobs", "ldd_map", fallback=False) or need_stream_order
+    )
+    need_river_burn = (
+        config.getboolean("Jobs", "river_burn", fallback=False)
+        or need_ldd_map
+        or need_river_width
+    )
+    need_catchment_mask = (
+        config.getboolean("Jobs", "catchment_mask", fallback=False) or need_stream_order
+    )
+
+    # execute tasks
+    if need_catchment_mask:
         mask_raster = create_catchment_mask(config, rows, cols, cell_centers)
 
-    if config.getboolean("Jobs", "outlet_map", fallback=False):
+    if need_outlet_map:
         create_outlet_map(config, rows, cols, cell_size, cell_centers)
 
-    if (
-        config.getboolean("Jobs", "river_burn", fallback=False)
-        or config.getboolean("Jobs", "ldd_map", fallback=False)
-        or config.getboolean("Jobs", "stream_order", fallback=False)
-        or config.getboolean("Jobs", "river_width", fallback=False)
-    ):
+    if need_river_burn:
         riv_corrected, riv_pcr = create_river_burn(
             config, rows, cols, cell_size, cell_centers
         )
 
-    if (
-        config.getboolean("Jobs", "ldd_map", fallback=False)
-        or config.getboolean("Jobs", "stream_order", fallback=False)
-        or config.getboolean("Jobs", "river_width", fallback=False)
-    ):
+    if need_ldd_map:
         dem = pcr.readmap(config["Paths"]["masterdem"])
         ldd = create_ldd_map(config, dem, riv_corrected)
 
-    if config.getboolean("Jobs", "stream_order", fallback=False) or config.getboolean(
-        "Jobs", "river_width", fallback=False
-    ):
+    if need_stream_order:
         stro_np = create_streamorder(config, rows, cols, mask_raster, ldd)
 
-    if config.getboolean("Jobs", "river_width", fallback=False):
+    if need_river_width:
         create_river_width(config, rows, cols, riv_pcr, stro_np)
 
-    if config.getboolean("Jobs", "soil_map", fallback=False):
+    if need_soil_map:
         create_soil_maps(config, rows, cols)
 
-    if config.getboolean("Jobs", "land_use_map", fallback=False):
+    if need_land_use:
         create_land_use(config, rows, cols)
 
     debug("Tasks complete")
