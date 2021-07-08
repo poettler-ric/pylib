@@ -238,6 +238,7 @@ def read_soil_to_dict(soils_folder):
 
 def create_outlet_map(config, rows, cols, cell_size, cell_centers):
     """Creates the outlet map"""
+    info("Generate outlet map")
 
     outlets = []
     for _, coords in config["Outlets"].items():
@@ -252,6 +253,7 @@ def create_outlet_map(config, rows, cols, cell_size, cell_centers):
 
 def create_catchment_mask(config, rows, cols, cell_centers):
     """Crete the catchment mask"""
+    info("Create catchment mask")
 
     # reads the catchment shapefile
     shape = shapefile.Reader(config["Shapefiles"]["shape_catchment"])
@@ -269,6 +271,7 @@ def create_catchment_mask(config, rows, cols, cell_centers):
 
 def create_river_burn(config, rows, cols, cell_size, cell_centers):
     """Create river burnin map"""
+    info("Burn in river")
 
     riv_shape = shapefile.Reader(config["Shapefiles"]["rivershape"])
     riv_points = generate_river_points(riv_shape, cell_size)
@@ -284,6 +287,7 @@ def create_river_burn(config, rows, cols, cell_size, cell_centers):
 
 def create_ldd_map(config, dem, riv_corrected):
     """Create local drainage direction map"""
+    info("Create local drainage direction")
 
     # removing nans
     riv_where_nan = np.isnan(riv_corrected)
@@ -307,6 +311,7 @@ def create_ldd_map(config, dem, riv_corrected):
 
 def create_streamorder(config, rows, cols, mask_raster, ldd):
     """Create streamorder map"""
+    info("Create stream order map")
 
     # manually adjust maximum streamorder
     stro = pcr.streamorder(ldd)
@@ -336,6 +341,7 @@ def create_river_width(config, rows, cols, riv_pcr, stro_np):
     Compute width on basis of strahler order
     Downing et al (2012): Global abundace and size distribution of streams and rivers.
     """
+    info("Create river width")
 
     width_np = np.copy(stro_np)
 
@@ -350,6 +356,7 @@ def create_river_width(config, rows, cols, riv_pcr, stro_np):
 
 def create_soil_maps(config, rows, cols):
     """Create soil maps"""
+    info("Create unifrom soil map")
 
     soil_np = np.ones((rows, cols))
     soil_pcr = pcr.numpy2pcr(pcr.Nominal, soil_np, 10)
@@ -401,6 +408,7 @@ def create_soil_maps(config, rows, cols):
 
 def create_land_use(config, rows, cols):
     """Creates land use maps"""
+    info("Create landuse maps")
 
     # FIXME: deactivate for now
     return
@@ -508,11 +516,9 @@ def main():
         or config.getboolean("Jobs", "stream_order", fallback=False)
         or config.getboolean("Jobs", "river_width", fallback=False)
     ):
-        info("Create catchment mask")
         mask_raster = create_catchment_mask(config, rows, cols, cell_centers)
 
     if config.getboolean("Jobs", "outlet_map", fallback=False):
-        info("Generate outlet map")
         create_outlet_map(config, rows, cols, cell_size, cell_centers)
 
     if (
@@ -521,7 +527,6 @@ def main():
         or config.getboolean("Jobs", "stream_order", fallback=False)
         or config.getboolean("Jobs", "river_width", fallback=False)
     ):
-        info("Burn in river")
         riv_corrected, riv_pcr = create_river_burn(
             config, rows, cols, cell_size, cell_centers
         )
@@ -531,26 +536,23 @@ def main():
         or config.getboolean("Jobs", "stream_order", fallback=False)
         or config.getboolean("Jobs", "river_width", fallback=False)
     ):
-        info("Create local drainage direction")
         ldd = create_ldd_map(config, dem, riv_corrected)
 
     if config.getboolean("Jobs", "stream_order", fallback=False) or config.getboolean(
         "Jobs", "river_width", fallback=False
     ):
-        info("Create stream order map")
         stro_np = create_streamorder(config, rows, cols, mask_raster, ldd)
 
     if config.getboolean("Jobs", "river_width", fallback=False):
-        info("Create river width")
         create_river_width(config, rows, cols, riv_pcr, stro_np)
 
     if config.getboolean("Jobs", "soil_map", fallback=False):
-        info("Create unifrom soil map")
         create_soil_maps(config, rows, cols)
 
     if config.getboolean("Jobs", "land_use_map", fallback=False):
-        info("Create landuse maps")
         create_land_use(config, rows, cols)
+
+    debug("Tasks complete")
 
 
 if __name__ == "__main__":
