@@ -2,7 +2,8 @@
 
 from configparser import ConfigParser, ExtendedInterpolation
 from argparse import ArgumentParser
-from logging import basicConfig, info, debug, CRITICAL, ERROR, WARNING, INFO, DEBUG
+from logging import info, debug
+import logging
 from json import loads
 
 import pcraster as pcr
@@ -15,6 +16,18 @@ import math
 import os
 
 # import gdal
+
+DEFAULT_MAX_STREAMORDER = 4
+
+"""Mapping from log level strings to logging levels"""
+LOG_LEVEL_MAP = {
+    "critical": logging.CRITICAL,
+    "error": logging.ERROR,
+    "warning": logging.WARNING,
+    "info": logging.INFO,
+    "debug": logging.DEBUG,
+}
+
 
 # generates a map of all the cell centers of the rasters
 def init_cellcenter(rows, cols, cell_size, xmin, ymin):
@@ -255,6 +268,8 @@ def create_catchment_mask(config, rows, cols, cell_centers):
 
 
 def main():
+    """Main function to prepare the files"""
+
     # Raster files
     working_folder = r"/data/home/richi/master_thesis/staticmaps"
     # ksat_ver_file = "KsatVer.map"
@@ -264,32 +279,23 @@ def main():
     # soil_thickness_map = "SoilThickness.map"
     # min_soil_thickness_map = "SoilMinThickness.map"
 
-    DEFAULT_MAX_STREAMORDER = 4
-
-    config = ConfigParser(interpolation=ExtendedInterpolation())
     parser = ArgumentParser(description="Prepare wflow files")
     parser.add_argument("config_file", help="configuration file destination")
     args = parser.parse_args()
+
+    config = ConfigParser(interpolation=ExtendedInterpolation())
     config.read(args.config_file)
-
-    LOG_LEVEL_MAP = {
-        "critical": CRITICAL,
-        "error": ERROR,
-        "warning": WARNING,
-        "info": INFO,
-        "debug": DEBUG,
-    }
-
-    # Settings
-    # set maximum streamorder
     if "Configuration" not in config:
         config["Configuration"] = {}
+
+    # set maximum streamorder
     if "max_stream_order" not in config["Configuration"]:
         config["Configuration"]["max_stream_order"] = str(DEFAULT_MAX_STREAMORDER)
 
-    basicConfig(
+    logging.basicConfig(
         level=LOG_LEVEL_MAP.get(
-            config.get("Configuration", "log_level", fallback="INFO").lower(), INFO
+            config.get("Configuration", "log_level", fallback="INFO").lower(),
+            logging.INFO,
         ),
         format="%(levelname)s %(asctime)s: %(message)s",
     )
@@ -336,7 +342,7 @@ def main():
     ####################################
 
     # Generate map of cell centers
-    info("Determine cell centers")
+    debug("Determine cell centers")
     cell_centers = init_cellcenter(rows, cols, cell_size, xmin, ymin)
 
     ####################################
@@ -525,7 +531,7 @@ def main():
     ##         Landuse maps
     ####################################
 
-    info("exit")
+    debug("exit")
     from sys import exit
 
     exit(-1)
