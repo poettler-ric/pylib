@@ -285,15 +285,6 @@ def create_river_burn(config, rows, cols, cell_size, cell_centers):
 def main():
     """Main function to prepare the files"""
 
-    # Raster files
-    working_folder = r"/data/home/richi/master_thesis/staticmaps"
-    # ksat_ver_file = "KsatVer.map"
-    # thetaS_file = "ThetaS.map"
-    # thetaR_file = "ThetaR.map"
-    # M_file = "M.map"
-    # soil_thickness_map = "SoilThickness.map"
-    # min_soil_thickness_map = "SoilMinThickness.map"
-
     parser = ArgumentParser(description="Prepare wflow files")
     parser.add_argument("config_file", help="configuration file destination")
     args = parser.parse_args()
