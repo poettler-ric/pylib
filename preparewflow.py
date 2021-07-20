@@ -406,12 +406,27 @@ def create_soil_maps(config, rows, cols):
     #    pcr.report(c_pcr, out_c)
 
 
+def generate_landuse_lookup(path):
+    """Read landuse lookup and create a dictionary for it."""
+    lookup_np = np.loadtxt(path, delimiter=",")
+    lookup_dict = {}
+    for row in lookup_np:
+        lookup_dict[int(row[0])] = {
+            "N": row[1],
+            "Sl": row[2],
+            "Swood": row[3],
+            "Kext": row[4],
+            "RD": row[5],
+        }
+    return lookup_dict
+
+
 def create_land_use(config, rows, cols):
     """Creates land use maps"""
     info("Create landuse maps")
 
     landuse = pcr.readmap(config["Paths"]["landuse_file"])
-    lookup = np.loadtxt(config["Paths"]["landuse_lookup"], delimiter=",")
+    lookup = generate_landuse_lookup(config["Paths"]["landuse_lookup"])
 
     lan_np = pcr.pcr2numpy(landuse, 0.0)
 
@@ -423,14 +438,12 @@ def create_land_use(config, rows, cols):
 
     for i in range(0, rows):
         for j in range(0, cols):
-            lu = int(lan_np[i][j])
-            diff = lookup[:, 0] - lu
-            index = np.where(abs(diff) < 0.1)
-            N[i][j] = lookup[index[0][0]][1]
-            Sl[i][j] = lookup[index[0][0]][2]
-            Swood[i][j] = lookup[index[0][0]][3]
-            Kext[i][j] = lookup[index[0][0]][4]
-            RD[i][j] = lookup[index[0][0]][5]
+            row = lookup[int(lan_np[i][j])]
+            N[i][j] = row["N"]
+            Sl[i][j] = row["Sl"]
+            Swood[i][j] = row["Swood"]
+            Kext[i][j] = row["Kext"]
+            RD[i][j] = row["RD"]
 
     N_pcr = pcr.numpy2pcr(pcr.Scalar, N, 10)
     pcr.report(N_pcr, config["Outfiles"]["N_file"])
