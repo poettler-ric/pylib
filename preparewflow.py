@@ -410,16 +410,8 @@ def create_land_use(config, rows, cols):
     """Creates land use maps"""
     info("Create landuse maps")
 
-    # FIXME: deactivate for now
-    return
-
-    landuse_file = r"/home/iwbworkstation/Desktop/working_dir/50m_data/4_Landuse/landuse_map_UTM33N.map"
-    landuse_lookup = (
-        r"/home/iwbworkstation/Desktop/working_dir/50m_data/4_Landuse/landuse_lookup"
-    )
-
-    landuse = pcr.readmap(landuse_file)
-    lookup = np.genfromtxt(landuse_lookup, delimiter=",")
+    landuse = pcr.readmap(config["Paths"]["landuse_file"])
+    lookup = np.loadtxt(config["Paths"]["landuse_lookup"], delimiter=",")
 
     lan_np = pcr.pcr2numpy(landuse, 0.0)
 
