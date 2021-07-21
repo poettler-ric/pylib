@@ -13,11 +13,11 @@ import netCDF4 as nc
 import pcraster as pcr
 import numpy as np
 import os
-import time
 import math
 import pyproj
 from scipy.interpolate import NearestNDInterpolator
 from preparewflow import init_cellcenter
+from logging import info, debug
 
 
 #######################################################################
@@ -34,7 +34,10 @@ def init_cellcenters_esrii(metadata):
     cellsize = float(metadata[4][1])
 
     cell_centers = np.zeros((nrows, ncols, 2))
-    print(ncols, nrows, x_center, y_center, cellsize)
+    debug(
+        f"ncols: {ncols} nrows: {nrows} x_center: {x_center} "
+        + f"y_center: {y_center} cellsize: {cellsize}"
+    )
 
     for i in range(0, nrows):
         for j in range(0, ncols):
@@ -62,12 +65,6 @@ def main():
     """Prepare mapstacks"""
 
     #######################################################################
-    #                        time things
-    #######################################################################
-
-    start_time = time.time()
-
-    #######################################################################
     #                        pcraster blueprint
     #######################################################################
 
@@ -89,9 +86,7 @@ def main():
 
     cell_centers = init_cellcenter(rows, cols, cell_size, xmin, ymin)
 
-    print(
-        "Original cell centers initialized in " + str(time.time() - start_time) + " s"
-    )
+    info("Original cell centers initialized")
 
     #######################################################################
     #                        NetCDF settings
@@ -174,7 +169,7 @@ def main():
             # count i up
             i += 1
 
-    print("Precipitation array generated in " + str(time.time() - start_time) + " s")
+    info("Precipitation array generated")
 
     # allocate temperature matrix
     temp_input = np.zeros((count, rows, cols), dtype="float32")
@@ -205,7 +200,7 @@ def main():
 
             i += 1
 
-    print("Temperature array generated in " + str(time.time() - start_time) + " s")
+    info("Temperature array generated")
 
     # how many files or arrays is in the averaging period?
     steps_ = tempaveraging / timestep
