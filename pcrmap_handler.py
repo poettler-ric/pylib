@@ -19,6 +19,7 @@ import math
 import pyproj
 from scipy.interpolate import NearestNDInterpolator
 from scipy import interpolate
+from preparewflow import init_cellcenter
 
 
 #######################################################################
@@ -41,18 +42,6 @@ def init_cellcenters_esrii(metadata):
         for j in range(0, ncols):
             cell_centers[i][j][0] = x_center + cellsize * j
             cell_centers[i][j][1] = (y_center + cellsize * (nrows - 1)) - cellsize * i
-
-    return cell_centers
-
-
-def init_cellcenter(rows, cols, cell_size, xmin, ymin):
-
-    cell_centers = np.zeros((rows, cols, 2))
-
-    for i in range(0, rows):
-        for j in range(0, cols):
-            cell_centers[i][j][0] = xmin + cell_size / 2.0 + cell_size * j
-            cell_centers[i][j][1] = ymin - cell_size / 2.0 - cell_size * i
 
     return cell_centers
 
