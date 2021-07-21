@@ -12,13 +12,11 @@
 import netCDF4 as nc
 import pcraster as pcr
 import numpy as np
-import datetime
 import os
 import time
 import math
 import pyproj
 from scipy.interpolate import NearestNDInterpolator
-from scipy import interpolate
 from preparewflow import init_cellcenter
 
 
@@ -61,6 +59,8 @@ def convert_lat_to_rad(lat):
 
 
 def main():
+    """Prepare mapstacks"""
+
     #######################################################################
     #                        time things
     #######################################################################
@@ -86,8 +86,6 @@ def main():
     # coordinates are in upper left corner
     xmin = pcr.clone().west()
     ymin = pcr.clone().north()
-    xmax = xmin + cell_size * cols
-    ymax = ymin - cell_size * rows
 
     cell_centers = init_cellcenter(rows, cols, cell_size, xmin, ymin)
 
@@ -126,8 +124,6 @@ def main():
 
     # allocate rain array
     rain_input = np.zeros((count, rows, cols), dtype="float32")
-
-    current_prog = 0
 
     # Rainloop
     i = 0
