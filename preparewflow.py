@@ -9,7 +9,6 @@ from json import loads
 import pcraster as pcr
 import numpy as np
 import shapefile
-import scipy as sp
 from shapely.geometry.polygon import Polygon
 from shapely.geometry import Point
 import math
@@ -34,9 +33,7 @@ def init_cellcenter(rows, cols, cell_size, xmin, ymin):
 
     cell_centers = np.zeros((rows, cols, 2))
 
-    i = 0
     for i in range(0, rows):
-        j = 0
         for j in range(0, cols):
             cell_centers[i][j][0] = xmin + cell_size / 2.0 + cell_size * j
             cell_centers[i][j][1] = ymin - cell_size / 2.0 - cell_size * i
