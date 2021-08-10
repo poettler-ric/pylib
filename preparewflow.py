@@ -455,6 +455,22 @@ def create_land_use(config, rows, cols):
     pcr.report(landuse, config["Outfiles"]["landuse_map"])
 
 
+def get_dem_info(dem):
+    """Determines raster infos of the dem"""
+
+    # Get values of the clone
+    rows = dem.clone().nrRows()
+    cols = dem.clone().nrCols()
+
+    cell_size = dem.clone().cellSize()
+
+    # coordinates are in upper left corner
+    xmin = dem.clone().west()
+    ymin = dem.clone().north()
+
+    return rows, cols, cell_size, xmin, ymin
+
+
 def main():
     """Main function to prepare the files"""
 
@@ -489,23 +505,11 @@ def main():
     # take_c = [1, 2, 3, 4]
 
     pcr.setglobaloption("unitcell")
-
     pcr.setclone(config["Paths"]["masterdem"])
 
-    # Get values of the clone
-    rows = pcr.clone().nrRows()
-    cols = pcr.clone().nrCols()
-
+    rows, cols, cell_size, xmin, ymin = get_dem_info(pcr)
     debug(f"rows: {rows} cols: {cols}")
-
-    cell_size = pcr.clone().cellSize()
-
     debug(f"cell_size: {cell_size}")
-
-    # coordinates are in upper left corner
-    xmin = pcr.clone().west()
-    ymin = pcr.clone().north()
-
     debug(f"xmin: {xmin} ymin: {ymin}")
 
     cell_centers = init_cellcenter(rows, cols, cell_size, xmin, ymin)
