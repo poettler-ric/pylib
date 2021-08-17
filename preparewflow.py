@@ -13,6 +13,9 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry import Point
 import math
 import os
+import xarray as xr
+from pyproj import Transformer
+from scipy.interpolate import NearestNDInterpolator
 
 # import gdal
 
@@ -471,6 +474,97 @@ def get_dem_info(dem):
     return rows, cols, cell_size, xmin, ymin
 
 
+def split_timedelta64_ns(td):
+    """Splits timedelta into days, hours, minutes and seconds portions."""
+    seconds = int(td / (10 ** 9))  # [ns] -> [s]
+    minutes = int(seconds / 60)
+    seconds %= 60
+    hours = int(minutes / 60)
+    minutes %= 60
+    days = int(hours / 24)
+    hours %= 60
+    return days, hours, minutes, seconds
+
+
+def create_inmap_precipitation(config, rows, cols, cell_centers):
+    """Creates precipitation inmaps"""
+    info("Create precipitation inmaps")
+
+    prec = xr.open_dataset(config["Weatherfiles"]["precipitation"], engine="cfgrib")
+
+    # create cell centers in input projection
+    xscale = prec.coords["longitude"].data
+    yscale = prec.coords["latitude"].data
+    # xmidpoints = (xscale[:-1] + xscale[1:]) / 2
+    # ymidpoints = (yscale[:-1] + yscale[1:]) / 2
+
+    input_centers = np.zeros((len(yscale), len(xscale), 2))
+    for i, ypos in enumerate(yscale):
+        for j, xpos in enumerate(xscale):
+            input_centers[i][j][0] = xpos
+            input_centers[i][j][1] = ypos
+
+    # project cell centers
+    transformer = Transformer.from_crs(
+        config["Projections"]["in_precipitation"], config["Projections"]["out"]
+    )
+    input_centers[:, :, 0], input_centers[:, :, 1] = transformer.transform(
+        input_centers[:, :, 0], input_centers[:, :, 1]
+    )
+
+    # reshapes cell centers for interpolator
+    input_centers_flat = input_centers.reshape(
+        len(input_centers[:, 0]) * len(input_centers[0, :]), 2
+    )
+    centers_flat = cell_centers.reshape(rows * cols, 2)
+
+    # loop over timesteps
+    is_first = True
+    is_second = True
+    first_step = None
+    counter = 0
+    for steps in prec["tp"]:
+        for step in steps:
+            if np.isnan(step).all() and is_first:
+                # skip first empty records
+                d = np.datetime_as_string(step.time + step.step, unit="s")
+                debug(f"skipping: {d}")
+                continue
+            elif is_first:
+                # print start
+                d = np.datetime_as_string(step.time + step.step, unit="s")
+                info(f"Recording starts at: {d}")
+                first_step = step
+                is_first = False
+            elif not is_first and is_second:
+                # print step
+                days, hours, minutes, seconds = split_timedelta64_ns(
+                    (step.time + step.step) - (first_step.time + first_step.step)
+                )
+                info(f"Step is: {days} d {hours} h {minutes} m {seconds} s")
+                is_second = False
+
+            # build interpolator
+            input_values_flat = step.data.reshape(len(input_centers_flat))
+            (step_rows, step_cols) = np.shape(step)
+            assert step_rows == len(yscale), "length of rows doesn't match"
+            assert step_cols == len(xscale), "length of columns doesn't match"
+            interp = NearestNDInterpolator(input_centers_flat, input_values_flat)
+
+            # create map
+            rain = interp(centers_flat).reshape(rows, cols)
+            raster = pcr.numpy2pcr(pcr.Scalar, rain, -9999)
+            pcr.report(
+                raster,
+                f"{config['Paths']['inmaps']}/P{counter/1000:011.3f}",
+            )
+
+            counter += 1
+
+        # FIXME: delete this after testing
+        break
+
+
 def main():
     """Main function to prepare the files"""
 
@@ -533,6 +627,9 @@ def main():
     need_catchment_mask = (
         config.getboolean("Jobs", "catchment_mask", fallback=False) or need_stream_order
     )
+    need_inmap_precipitation = config.getboolean(
+        "Jobs", "inmap_precipitation", fallback=False
+    )
 
     # execute tasks
     if need_catchment_mask:
@@ -561,6 +658,9 @@ def main():
 
     if need_land_use:
         create_land_use(config, rows, cols)
+
+    if need_inmap_precipitation:
+        create_inmap_precipitation(config, rows, cols, cell_centers)
 
     debug("Tasks complete")
 
