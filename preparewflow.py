@@ -553,15 +553,15 @@ def create_inmap_precipitation(config, rows, cols, cell_centers):
 
             # create map
             rain = interp(centers_flat).reshape(rows, cols)
-            raster = pcr.numpy2pcr(pcr.Scalar, rain, -9999)
             pcr.report(
-                raster,
+                pcr.numpy2pcr(pcr.Scalar, rain, -9999),
                 f"{config['Paths']['inmaps']}/P{counter/1000:011.3f}",
             )
 
             counter += 1
 
         # FIXME: delete this after testing
+        info("aborted generation of mapstacks")
         break
 
 
