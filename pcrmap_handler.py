@@ -16,8 +16,12 @@ import os
 import math
 import pyproj
 from scipy.interpolate import NearestNDInterpolator
-from preparewflow import init_cellcenter
+
+from argparse import ArgumentParser
+from configparser import ConfigParser, ExtendedInterpolation
 from logging import info, debug
+from preparewflow import init_cellcenter, get_dem_info, LOG_LEVEL_MAP
+import logging
 
 
 #######################################################################
@@ -64,26 +68,29 @@ def convert_lat_to_rad(lat):
 def main():
     """Prepare mapstacks"""
 
+    parser = ArgumentParser(description="Prepare wflow mapstacks")
+    parser.add_argument("config_file", help="configuration file destination")
+    args = parser.parse_args()
+
+    config = ConfigParser(interpolation=ExtendedInterpolation())
+    config.read(args.config_file)
+
+    logging.basicConfig(
+        level=LOG_LEVEL_MAP.get(
+            config.get("Configuration", "log_level", fallback="INFO").lower(),
+            logging.INFO,
+        ),
+        format="%(levelname)s %(asctime)s: %(message)s",
+    )
+
     #######################################################################
     #                        pcraster blueprint
     #######################################################################
 
-    working_folder = r"/home/iwbworkstation/Desktop/working_dir/NSGA2_hbv/Model_200m_HBV04-06/staticmaps"
-    masterdem = "wflow_dem.map"
-
     pcr.setglobaloption("unitcell")
+    pcr.setclone(config["Paths"]["masterdem"])
 
-    pcr.setclone(working_folder + "/" + masterdem)
-
-    rows = pcr.clone().nrRows()
-    cols = pcr.clone().nrCols()
-
-    cell_size = pcr.clone().cellSize()
-
-    # coordinates are in upper left corner
-    xmin = pcr.clone().west()
-    ymin = pcr.clone().north()
-
+    rows, cols, cell_size, xmin, ymin = get_dem_info(pcr)
     cell_centers = init_cellcenter(rows, cols, cell_size, xmin, ymin)
 
     info("Original cell centers initialized")
@@ -99,8 +106,6 @@ def main():
         r"/home/iwbworkstation/Desktop/working_dir/NSGA2_hbv/Model_200m_HBV04-06/inmaps"
     )
 
-    INCA_epsg = "epsg:31258"
-    model_epsg = "epsg:23633"
     # minutes is accurate enough
     timestep = 15  # in min
     # averaging temperature
@@ -110,8 +115,8 @@ def main():
     #######################################################################
 
     # Initialize Projections
-    inProj = pyproj.Proj(init=INCA_epsg)
-    outProj = pyproj.Proj(init=model_epsg)
+    inProj = pyproj.Proj(init=config["projections"]["in_precipitation"])
+    outProj = pyproj.Proj(init=config["projections"]["out"])
 
     # Count all the files in the given folder
     path, dirs, files = next(os.walk(rain))
