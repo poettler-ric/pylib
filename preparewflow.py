@@ -520,6 +520,7 @@ def create_inmap_temperature(config, rows, cols, cell_centers):
     is_first = True
     is_second = True
     first_step = None
+    max_steps = config.getint("Weatherfiles", "max_steps", fallback=0)
     counter = 0
     for step in grib["t2m"]:
         if np.isnan(step).all() and is_first:
@@ -540,10 +541,9 @@ def create_inmap_temperature(config, rows, cols, cell_centers):
             )
             info(f"Step is: {days} d {hours} h {minutes} m {seconds} s")
             is_second = False
-        else:
-            # FIXME: delete this after testing
-            info("aborted generation of mapstacks")
-            break
+        elif max_steps and counter >= max_steps:
+            info("max_steps reached")
+            return
 
         # build interpolator
         input_values_flat = step.data.reshape(len(input_centers_flat))
@@ -642,6 +642,7 @@ def create_inmap_era5_grib_steps(
     is_first = True
     is_second = True
     first_step = None
+    max_steps = config.getint("Weatherfiles", "max_steps", fallback=0)
     counter = 0
     for steps in grib[grib_variable]:
         for step in steps:
@@ -663,6 +664,9 @@ def create_inmap_era5_grib_steps(
                 )
                 info(f"Step is: {days} d {hours} h {minutes} m {seconds} s")
                 is_second = False
+            elif max_steps and counter >= max_steps:
+                info("max_steps reached")
+                return
 
             # build interpolator
             input_values_flat = step.data.reshape(len(input_centers_flat))
@@ -679,10 +683,6 @@ def create_inmap_era5_grib_steps(
             )
 
             counter += 1
-
-        # FIXME: delete this after testing
-        info("aborted generation of mapstacks")
-        break
 
 
 def main():
