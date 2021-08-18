@@ -490,13 +490,11 @@ def create_inmap_temperature(config, rows, cols, cell_centers):
     """Creates temperature inmaps"""
     info("Create temperature inmaps")
 
-    prec = xr.open_dataset(config["Weatherfiles"]["temperature"], engine="cfgrib")
+    grib = xr.open_dataset(config["Weatherfiles"]["temperature"], engine="cfgrib")
 
     # create cell centers in input projection
-    xscale = prec.coords["longitude"].data
-    yscale = prec.coords["latitude"].data
-    # xmidpoints = (xscale[:-1] + xscale[1:]) / 2
-    # ymidpoints = (yscale[:-1] + yscale[1:]) / 2
+    xscale = grib.coords["longitude"].data
+    yscale = grib.coords["latitude"].data
 
     input_centers = np.zeros((len(yscale), len(xscale), 2))
     for i, ypos in enumerate(yscale):
@@ -523,7 +521,7 @@ def create_inmap_temperature(config, rows, cols, cell_centers):
     is_second = True
     first_step = None
     counter = 0
-    for step in prec["t2m"]:
+    for step in grib["t2m"]:
         if np.isnan(step).all() and is_first:
             # skip first empty records
             d = np.datetime_as_string(step.time + step.step, unit="s")
@@ -555,9 +553,9 @@ def create_inmap_temperature(config, rows, cols, cell_centers):
         interp = NearestNDInterpolator(input_centers_flat, input_values_flat)
 
         # create map
-        rain = interp(centers_flat).reshape(rows, cols)
+        interpolated = interp(centers_flat).reshape(rows, cols)
         pcr.report(
-            pcr.numpy2pcr(pcr.Scalar, rain, -9999),
+            pcr.numpy2pcr(pcr.Scalar, interpolated, -9999),
             f"{config['Paths']['inmaps']}/TEMP{counter/1000:011.3f}",
         )
 
@@ -601,8 +599,6 @@ def create_inmap_era5_grib_steps(
     # create cell centers in input projection
     xscale = grib.coords["longitude"].data
     yscale = grib.coords["latitude"].data
-    # xmidpoints = (xscale[:-1] + xscale[1:]) / 2
-    # ymidpoints = (yscale[:-1] + yscale[1:]) / 2
 
     input_centers = np.zeros((len(yscale), len(xscale), 2))
     for i, ypos in enumerate(yscale):
