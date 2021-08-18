@@ -565,14 +565,42 @@ def create_inmap_temperature(config, rows, cols, cell_centers):
 
 
 def create_inmap_precipitation(config, rows, cols, cell_centers):
-    """Creates precipitation inmaps"""
+    """Creates precipitation inmaps."""
     info("Create precipitation inmaps")
 
-    prec = xr.open_dataset(config["Weatherfiles"]["precipitation"], engine="cfgrib")
+    grib_file = config["Weatherfiles"]["precipitation"]
+    grib_projection = config["Projections"]["in_precipitation"]
+    grib_variable = "tp"
+    file_template = config["Paths"]["inmaps"] + "/P{:011.3f}"
+    create_inmap_era5_grib_steps(
+        config,
+        rows,
+        cols,
+        cell_centers,
+        grib_file,
+        grib_projection,
+        grib_variable,
+        file_template,
+    )
+
+
+def create_inmap_era5_grib_steps(
+    config,
+    rows,
+    cols,
+    cell_centers,
+    grib_file,
+    grib_projection,
+    grib_variable,
+    file_template,
+):
+    """Creates mapstacks from era5 grib files with multiple steps."""
+
+    grib = xr.open_dataset(grib_file, engine="cfgrib")
 
     # create cell centers in input projection
-    xscale = prec.coords["longitude"].data
-    yscale = prec.coords["latitude"].data
+    xscale = grib.coords["longitude"].data
+    yscale = grib.coords["latitude"].data
     # xmidpoints = (xscale[:-1] + xscale[1:]) / 2
     # ymidpoints = (yscale[:-1] + yscale[1:]) / 2
 
@@ -583,9 +611,7 @@ def create_inmap_precipitation(config, rows, cols, cell_centers):
             input_centers[i][j][1] = ypos
 
     # project cell centers
-    transformer = Transformer.from_crs(
-        config["Projections"]["in_precipitation"], config["Projections"]["out"]
-    )
+    transformer = Transformer.from_crs(grib_projection, config["Projections"]["out"])
     input_centers[:, :, 0], input_centers[:, :, 1] = transformer.transform(
         input_centers[:, :, 0], input_centers[:, :, 1]
     )
@@ -601,7 +627,7 @@ def create_inmap_precipitation(config, rows, cols, cell_centers):
     is_second = True
     first_step = None
     counter = 0
-    for steps in prec["tp"]:
+    for steps in grib[grib_variable]:
         for step in steps:
             if np.isnan(step).all() and is_first:
                 # skip first empty records
@@ -630,10 +656,10 @@ def create_inmap_precipitation(config, rows, cols, cell_centers):
             interp = NearestNDInterpolator(input_centers_flat, input_values_flat)
 
             # create map
-            rain = interp(centers_flat).reshape(rows, cols)
+            interpolated = interp(centers_flat).reshape(rows, cols)
             pcr.report(
-                pcr.numpy2pcr(pcr.Scalar, rain, -9999),
-                f"{config['Paths']['inmaps']}/P{counter/1000:011.3f}",
+                pcr.numpy2pcr(pcr.Scalar, interpolated, -9999),
+                file_template.format(counter / 1000),
             )
 
             counter += 1
