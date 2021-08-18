@@ -582,6 +582,26 @@ def create_inmap_precipitation(config, rows, cols, cell_centers):
     )
 
 
+def create_inmap_evaporation(config, rows, cols, cell_centers):
+    """Creates evaporation inmaps."""
+    info("Create evaporation inmaps")
+
+    grib_file = config["Weatherfiles"]["evaporation"]
+    grib_projection = config["Projections"]["in_evaporation"]
+    grib_variable = "pev"
+    file_template = config["Paths"]["inmaps"] + "/PET{:011.3f}"
+    create_inmap_era5_grib_steps(
+        config,
+        rows,
+        cols,
+        cell_centers,
+        grib_file,
+        grib_projection,
+        grib_variable,
+        file_template,
+    )
+
+
 def create_inmap_era5_grib_steps(
     config,
     rows,
@@ -733,6 +753,9 @@ def main():
     need_inmap_temperature = config.getboolean(
         "Jobs", "inmap_temperature", fallback=False
     )
+    need_inmap_evaporation = config.getboolean(
+        "Jobs", "inmap_evaporation", fallback=False
+    )
 
     # execute tasks
     if need_catchment_mask:
@@ -767,6 +790,9 @@ def main():
 
     if need_inmap_temperature:
         create_inmap_temperature(config, rows, cols, cell_centers)
+
+    if need_inmap_evaporation:
+        create_inmap_evaporation(config, rows, cols, cell_centers)
 
     debug("Tasks complete")
 
