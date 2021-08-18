@@ -486,6 +486,84 @@ def split_timedelta64_ns(td):
     return days, hours, minutes, seconds
 
 
+def create_inmap_temperature(config, rows, cols, cell_centers):
+    """Creates temperature inmaps"""
+    info("Create temperature inmaps")
+
+    prec = xr.open_dataset(config["Weatherfiles"]["temperature"], engine="cfgrib")
+
+    # create cell centers in input projection
+    xscale = prec.coords["longitude"].data
+    yscale = prec.coords["latitude"].data
+    # xmidpoints = (xscale[:-1] + xscale[1:]) / 2
+    # ymidpoints = (yscale[:-1] + yscale[1:]) / 2
+
+    input_centers = np.zeros((len(yscale), len(xscale), 2))
+    for i, ypos in enumerate(yscale):
+        for j, xpos in enumerate(xscale):
+            input_centers[i][j][0] = xpos
+            input_centers[i][j][1] = ypos
+
+    # project cell centers
+    transformer = Transformer.from_crs(
+        config["Projections"]["in_temperature"], config["Projections"]["out"]
+    )
+    input_centers[:, :, 0], input_centers[:, :, 1] = transformer.transform(
+        input_centers[:, :, 0], input_centers[:, :, 1]
+    )
+
+    # reshapes cell centers for interpolator
+    input_centers_flat = input_centers.reshape(
+        len(input_centers[:, 0]) * len(input_centers[0, :]), 2
+    )
+    centers_flat = cell_centers.reshape(rows * cols, 2)
+
+    # loop over timesteps
+    is_first = True
+    is_second = True
+    first_step = None
+    counter = 0
+    for step in prec["t2m"]:
+        if np.isnan(step).all() and is_first:
+            # skip first empty records
+            d = np.datetime_as_string(step.time + step.step, unit="s")
+            debug(f"skipping: {d}")
+            continue
+        elif is_first:
+            # print start
+            d = np.datetime_as_string(step.time + step.step, unit="s")
+            info(f"Recording starts at: {d}")
+            first_step = step
+            is_first = False
+        elif not is_first and is_second:
+            # print step
+            days, hours, minutes, seconds = split_timedelta64_ns(
+                (step.time + step.step) - (first_step.time + first_step.step)
+            )
+            info(f"Step is: {days} d {hours} h {minutes} m {seconds} s")
+            is_second = False
+        else:
+            # FIXME: delete this after testing
+            info("aborted generation of mapstacks")
+            break
+
+        # build interpolator
+        input_values_flat = step.data.reshape(len(input_centers_flat))
+        (step_rows, step_cols) = np.shape(step)
+        assert step_rows == len(yscale), "length of rows doesn't match"
+        assert step_cols == len(xscale), "length of columns doesn't match"
+        interp = NearestNDInterpolator(input_centers_flat, input_values_flat)
+
+        # create map
+        rain = interp(centers_flat).reshape(rows, cols)
+        pcr.report(
+            pcr.numpy2pcr(pcr.Scalar, rain, -9999),
+            f"{config['Paths']['inmaps']}/TEMP{counter/1000:011.3f}",
+        )
+
+        counter += 1
+
+
 def create_inmap_precipitation(config, rows, cols, cell_centers):
     """Creates precipitation inmaps"""
     info("Create precipitation inmaps")
@@ -630,6 +708,9 @@ def main():
     need_inmap_precipitation = config.getboolean(
         "Jobs", "inmap_precipitation", fallback=False
     )
+    need_inmap_temperature = config.getboolean(
+        "Jobs", "inmap_temperature", fallback=False
+    )
 
     # execute tasks
     if need_catchment_mask:
@@ -661,6 +742,9 @@ def main():
 
     if need_inmap_precipitation:
         create_inmap_precipitation(config, rows, cols, cell_centers)
+
+    if need_inmap_temperature:
+        create_inmap_temperature(config, rows, cols, cell_centers)
 
     debug("Tasks complete")
 
