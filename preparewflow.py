@@ -487,7 +487,9 @@ def split_timedelta64_ns(td):
 
 
 def create_inmap_temperature(config, rows, cols, cell_centers):
-    """Creates temperature inmaps"""
+    """Creates temperature inmaps.
+
+    Values are in Kelvin."""
     info("Create temperature inmaps")
 
     grib = xr.open_dataset(config["Weatherfiles"]["temperature"], engine="cfgrib")
@@ -563,7 +565,10 @@ def create_inmap_temperature(config, rows, cols, cell_centers):
 
 
 def create_inmap_precipitation(config, rows, cols, cell_centers):
-    """Creates precipitation inmaps."""
+    """Creates precipitation inmaps.
+
+    Values are in meters.
+    """
     info("Create precipitation inmaps")
 
     grib_file = config["Weatherfiles"]["precipitation"]
@@ -583,7 +588,9 @@ def create_inmap_precipitation(config, rows, cols, cell_centers):
 
 
 def create_inmap_evaporation(config, rows, cols, cell_centers):
-    """Creates evaporation inmaps."""
+    """Creates evaporation inmaps.
+
+    Values are in meters."""
     info("Create evaporation inmaps")
 
     grib_file = config["Weatherfiles"]["evaporation"]
