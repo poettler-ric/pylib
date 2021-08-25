@@ -91,6 +91,7 @@ def generate_river_points(shapefile, cell_size):
     return points_2D
 
 
+# TODO: delete cell_size
 def burn_in_river(cell_centers, rows, cols, riv_points, cell_size):
 
     river_array = np.empty((rows, cols))
@@ -108,6 +109,7 @@ def burn_in_river(cell_centers, rows, cols, riv_points, cell_size):
     return river_array
 
 
+# TODO: delete cell_size
 def burn_coords(cell_centers, rows, cols, riv_points, cell_size):
 
     river_array = np.empty((rows, cols))
