@@ -5,6 +5,10 @@ __copyright__ = "Copyright (c) 2021 Richard Pöttler"
 __license__ = "MIT"
 __email__ = "richard.poettler@gmail.com"
 
+"""
+Simple unit system.
+"""
+
 # base units
 SECOND = 1
 METER = 1
