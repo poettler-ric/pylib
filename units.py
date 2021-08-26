@@ -47,3 +47,5 @@ DAY = 24 * HOUR  # [day] -> [s]
 GRAVITY = 9.80665 * MPS2
 DENSITY_WATER = 1 * KILOGRAM / DM ** 3
 KINEMATIC_VISCOSITY = 1.3 * 10 ** -6 * M ** 2 / S  # at 10 degree celsius
+
+kelvin_to_celsius = lambda k: k - 273.15
