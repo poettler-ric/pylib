@@ -16,6 +16,7 @@ import os
 import pcraster as pcr
 import shapefile
 import xarray as xr
+from units import MM, kelvin_to_celsius
 
 # import gdal
 
@@ -491,8 +492,10 @@ def split_timedelta64_ns(td):
 def create_inmap_temperature(config, rows, cols, cell_centers):
     """Creates temperature inmaps.
 
-    Values are in Kelvin."""
+    Needed values are Celsius."""
     info("Create temperature inmaps")
+
+    converter = kelvin_to_celsius
 
     grib = xr.open_dataset(config["Weatherfiles"]["temperature"], engine="cfgrib")
 
@@ -549,6 +552,10 @@ def create_inmap_temperature(config, rows, cols, cell_centers):
             info("max_steps reached")
             return
 
+        # convert values if needed
+        if converter:
+            step = converter(step)
+
         # build interpolator
         input_values_flat = step.data.reshape(len(input_centers_flat))
         (step_rows, step_cols) = np.shape(step)
@@ -569,8 +576,7 @@ def create_inmap_temperature(config, rows, cols, cell_centers):
 def create_inmap_precipitation(config, rows, cols, cell_centers):
     """Creates precipitation inmaps.
 
-    Values are in meters.
-    """
+    Needed values are milli meters."""
     info("Create precipitation inmaps")
 
     grib_file = config["Weatherfiles"]["precipitation"]
@@ -586,13 +592,14 @@ def create_inmap_precipitation(config, rows, cols, cell_centers):
         grib_projection,
         grib_variable,
         file_template,
+        converter=lambda m: m / MM,
     )
 
 
 def create_inmap_evaporation(config, rows, cols, cell_centers):
     """Creates evaporation inmaps.
 
-    Values are in meters."""
+    Needed values are milli meters."""
     info("Create evaporation inmaps")
 
     grib_file = config["Weatherfiles"]["evaporation"]
@@ -608,6 +615,7 @@ def create_inmap_evaporation(config, rows, cols, cell_centers):
         grib_projection,
         grib_variable,
         file_template,
+        converter=lambda m: m / MM,
     )
 
 
@@ -620,6 +628,7 @@ def create_inmap_era5_grib_steps(
     grib_projection,
     grib_variable,
     file_template,
+    converter=None,
 ):
     """Creates mapstacks from era5 grib files with multiple steps."""
 
@@ -676,6 +685,10 @@ def create_inmap_era5_grib_steps(
             elif max_steps and counter >= max_steps:
                 info("max_steps reached")
                 return
+
+            # convert values if needed
+            if converter:
+                step = converter(step)
 
             # build interpolator
             input_values_flat = step.data.reshape(len(input_centers_flat))
