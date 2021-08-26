@@ -816,7 +816,7 @@ def main():
     if need_inmap_evaporation:
         create_inmap_evaporation(config, rows, cols, cell_centers)
 
-    debug("Tasks complete")
+    info("Tasks complete")
 
 
 if __name__ == "__main__":
