@@ -717,13 +717,23 @@ def main():
     config = ConfigParser(interpolation=ExtendedInterpolation())
     config.read(args.config_file)
 
-    logging.basicConfig(
-        level=LOG_LEVEL_MAP.get(
-            config.get("Configuration", "log_level", fallback="INFO").lower(),
-            logging.INFO,
-        ),
-        format="%(levelname)s %(asctime)s: %(message)s",
+    root_logger = logging.getLogger()
+    log_formatter = logging.Formatter("%(levelname)s %(asctime)s: %(message)s")
+    log_level = LOG_LEVEL_MAP.get(
+        config.get("Configuration", "log_level", fallback="INFO").lower(),
+        logging.INFO,
     )
+    root_logger.setLevel(log_level)
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(log_formatter)
+    root_logger.addHandler(console_handler)
+
+    log_file = config.get("Configuration", "log_file", fallback=None)
+    if log_file:
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setFormatter(log_formatter)
+        root_logger.addHandler(file_handler)
 
     # Soil stuff
     # soils_folder = "/home/iwbworkstation/Desktop/working_dir/50m_data/2_Soil"
