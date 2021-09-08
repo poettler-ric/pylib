@@ -529,16 +529,17 @@ def create_inmap_temperature(config, rows, cols, cell_centers):
     first_step = None
     max_steps = config.getint("Weatherfiles", "max_steps", fallback=0)
     counter = 0
+    date_time = None
     for step in grib["t2m"]:
+        date_time = np.datetime_as_string(step.time + step.step, unit="s")
+
         if np.isnan(step).all() and is_first:
             # skip first empty records
-            d = np.datetime_as_string(step.time + step.step, unit="s")
-            debug(f"skipping: {d}")
+            debug(f"skipping: {date_time}")
             continue
         elif is_first:
             # print start
-            d = np.datetime_as_string(step.time + step.step, unit="s")
-            info(f"Recording starts at: {d}")
+            info(f"Recording starts at: {date_time}")
             first_step = step
             is_first = False
         elif not is_first and is_second:
@@ -549,7 +550,7 @@ def create_inmap_temperature(config, rows, cols, cell_centers):
             info(f"Step is: {days} d {hours} h {minutes} m {seconds} s")
             is_second = False
         elif max_steps and counter >= max_steps:
-            info("max_steps reached")
+            info(f"max_steps reached at {date_time}")
             return
 
         # convert values if needed
@@ -571,6 +572,9 @@ def create_inmap_temperature(config, rows, cols, cell_centers):
         )
 
         counter += 1
+
+    if date_time:
+        info(f"Recording ends at: {date_time}")
 
 
 def create_inmap_precipitation(config, rows, cols, cell_centers):
@@ -662,17 +666,18 @@ def create_inmap_era5_grib_steps(
     first_step = None
     max_steps = config.getint("Weatherfiles", "max_steps", fallback=0)
     counter = 0
+    date_time = None
     for steps in grib[grib_variable]:
         for step in steps:
+            date_time = np.datetime_as_string(step.time + step.step, unit="s")
+
             if np.isnan(step).all() and is_first:
                 # skip first empty records
-                d = np.datetime_as_string(step.time + step.step, unit="s")
-                debug(f"skipping: {d}")
+                debug(f"skipping: {date_time}")
                 continue
             elif is_first:
                 # print start
-                d = np.datetime_as_string(step.time + step.step, unit="s")
-                info(f"Recording starts at: {d}")
+                info(f"Recording starts at: {date_time}")
                 first_step = step
                 is_first = False
             elif not is_first and is_second:
@@ -683,7 +688,7 @@ def create_inmap_era5_grib_steps(
                 info(f"Step is: {days} d {hours} h {minutes} m {seconds} s")
                 is_second = False
             elif max_steps and counter >= max_steps:
-                info("max_steps reached")
+                info(f"max_steps reached at {date_time}")
                 return
 
             # convert values if needed
@@ -705,6 +710,9 @@ def create_inmap_era5_grib_steps(
             )
 
             counter += 1
+
+    if date_time:
+        info(f"Recording ends at: {date_time}")
 
 
 def main():
