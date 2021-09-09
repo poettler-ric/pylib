@@ -97,14 +97,9 @@ def burn_in_river(cell_centers, rows, cols, riv_points):
     river_array = np.empty((rows, cols))
     river_array[:] = np.NaN
 
-    for i in range(0, len(riv_points)):
-        riv1 = np.sqrt(
-            (cell_centers[:, :, 0] - riv_points[i][0]) ** 2.0
-            + (cell_centers[:, :, 1] - riv_points[i][1]) ** 2.0
-        )
-        minriv = np.amin(abs(riv1))
-        index = np.where(riv1 == minriv)
-        river_array[index[0][0]][index[1][0]] = 1
+    for point in riv_points:
+        i_x, i_y = find_nearest_neighbour(cell_centers, point)
+        river_array[i_x][i_y] = 1
 
     return river_array
 
@@ -114,16 +109,22 @@ def burn_coords(cell_centers, rows, cols, riv_points):
     river_array = np.empty((rows, cols))
     river_array[:] = -9999
 
-    for i in range(0, len(riv_points)):
-        riv1 = np.sqrt(
-            (cell_centers[:, :, 0] - riv_points[i][0]) ** 2.0
-            + (cell_centers[:, :, 1] - riv_points[i][1]) ** 2.0
-        )
-        minriv = np.amin(abs(riv1))
-        index = np.where(riv1 == minriv)
-        river_array[index[0][0]][index[1][0]] = i + 1
+    for i, point in enumerate(riv_points):
+        i_x, i_y = find_nearest_neighbour(cell_centers, point)
+        river_array[i_x][i_y] = i + 1
 
     return river_array
+
+
+def find_nearest_neighbour(centers, point):
+    """Finds the indexes of the nearest neighbour of point in centers."""
+
+    distances = np.sqrt(
+        (centers[:, :, 0] - point[0]) ** 2.0 + (centers[:, :, 1] - point[1]) ** 2.0
+    )
+    min_distance = np.amin(distances)
+    index = np.where(distances == min_distance)
+    return index[0][0], index[1][0]
 
 
 def gen_river_connectivity(river_array, rows, cols):
