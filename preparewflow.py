@@ -104,18 +104,6 @@ def burn_in_river(cell_centers, rows, cols, riv_points):
     return river_array
 
 
-def burn_coords(cell_centers, rows, cols, riv_points):
-
-    river_array = np.empty((rows, cols))
-    river_array[:] = -9999
-
-    for i, point in enumerate(riv_points):
-        i_x, i_y = find_nearest_neighbour(cell_centers, point)
-        river_array[i_x][i_y] = i + 1
-
-    return river_array
-
-
 def find_nearest_neighbour(centers, point):
     """Finds the indexes of the nearest neighbour of point in centers."""
 
