@@ -92,8 +92,7 @@ def generate_river_points(shapefile, cell_size):
     return points_2D
 
 
-# TODO: delete cell_size
-def burn_in_river(cell_centers, rows, cols, riv_points, cell_size):
+def burn_in_river(cell_centers, rows, cols, riv_points):
 
     river_array = np.empty((rows, cols))
     river_array[:] = np.NaN
@@ -110,8 +109,7 @@ def burn_in_river(cell_centers, rows, cols, riv_points, cell_size):
     return river_array
 
 
-# TODO: delete cell_size
-def burn_coords(cell_centers, rows, cols, riv_points, cell_size):
+def burn_coords(cell_centers, rows, cols, riv_points):
 
     river_array = np.empty((rows, cols))
     river_array[:] = -9999
@@ -239,7 +237,7 @@ def read_soil_to_dict(soils_folder):
     return thetaS, thetaR, c, ksat_ver
 
 
-def create_outlet_map(config, rows, cols, cell_size, cell_centers):
+def create_outlet_map(config, rows, cols, cell_centers):
     """Creates the outlet map"""
     info("Generate outlet map")
 
@@ -248,7 +246,7 @@ def create_outlet_map(config, rows, cols, cell_size, cell_centers):
         outlets.append(loads(coords))
 
     ## burn in river and stuff like that
-    outlet_array = burn_coords(cell_centers, rows, cols, outlets, cell_size)
+    outlet_array = burn_coords(cell_centers, rows, cols, outlets)
 
     outlet_pcr = pcr.numpy2pcr(pcr.Nominal, outlet_array, 10)
     pcr.report(outlet_pcr, config["Outfiles"]["outlet_map"])
@@ -278,7 +276,7 @@ def create_river_burn(config, rows, cols, cell_size, cell_centers):
 
     riv_shape = shapefile.Reader(config["Shapefiles"]["rivershape"])
     riv_points = generate_river_points(riv_shape, cell_size)
-    riv_array = burn_in_river(cell_centers, rows, cols, riv_points, cell_size)
+    riv_array = burn_in_river(cell_centers, rows, cols, riv_points)
     riv_corrected = gen_river_connectivity(riv_array, rows, cols)
     ## turn off correction
     riv_corrected = riv_array
@@ -851,7 +849,7 @@ def main():
         mask_raster = create_catchment_mask(config, rows, cols, cell_centers)
 
     if need_outlet_map:
-        create_outlet_map(config, rows, cols, cell_size, cell_centers)
+        create_outlet_map(config, rows, cols, cell_centers)
 
     if need_river_burn:
         riv_corrected, riv_pcr = create_river_burn(
