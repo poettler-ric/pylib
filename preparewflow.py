@@ -242,12 +242,26 @@ def create_outlet_map(config, rows, cols, cell_centers):
     """Creates the outlet map"""
     info("Generate outlet map")
 
-    outlets = []
-    for _, coords in config["Outlets"].items():
-        outlets.append(loads(coords))
+    INITIAL_VALUE = -9999
+    outlet_array = np.empty((rows, cols))
+    outlet_array[:] = INITIAL_VALUE
 
-    ## burn in river and stuff like that
-    outlet_array = burn_coords(cell_centers, rows, cols, outlets)
+    counter = 1
+    for name, coords in config["Outlets"].items():
+        point = loads(coords)
+        i_x, i_y = find_nearest_neighbour(cell_centers, point)
+
+        if i_x == 0 or i_y == 0 or i_x == (rows - 1) or i_y == (cols - 1):
+            info(f"{name} is placed at the border of the map")
+
+        if outlet_array[i_x][i_y] != INITIAL_VALUE:
+            info(
+                f"skipping {name} because it would overwrite id {outlet_array[i_x][i_y]}"
+            )
+        else:
+            outlet_array[i_x][i_y] = counter
+            info(f"wrote {name} with id {counter}")
+            counter += 1
 
     outlet_pcr = pcr.numpy2pcr(pcr.Nominal, outlet_array, 10)
     pcr.report(outlet_pcr, config["Outfiles"]["outlet_map"])
