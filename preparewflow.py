@@ -244,11 +244,11 @@ def create_outlet_map(config, rows, cols, cell_centers):
 
         if outlet_array[i_x][i_y] != INITIAL_VALUE:
             info(
-                f"skipping {name} because it would overwrite id {outlet_array[i_x][i_y]}"
+                f"Skipping {name} because it would overwrite id {outlet_array[i_x][i_y]}"
             )
         else:
             outlet_array[i_x][i_y] = counter
-            info(f"wrote {name} with id {counter}")
+            info(f"Wrote {name} with id {counter}")
             counter += 1
 
     outlet_pcr = pcr.numpy2pcr(pcr.Nominal, outlet_array, 10)
@@ -532,6 +532,8 @@ def create_inmap_era5_grib(
     counter=0,
 ):
     """Creates mapstacks from era5 grib files."""
+
+    info(f"Handling {grib_file}")
     grib = xr.open_dataset(grib_file, engine="cfgrib")
 
     # create cell centers in input projection
@@ -685,6 +687,7 @@ def create_inmap_era5_grib_steps(
 ):
     """Creates mapstacks from era5 grib files with multiple steps."""
 
+    info(f"Handling {grib_file}")
     grib = xr.open_dataset(grib_file, engine="cfgrib")
 
     # create cell centers in input projection
