@@ -495,21 +495,27 @@ def create_inmap_temperature(config, rows, cols, cell_centers):
     Needed values are Celsius."""
     info("Create temperature inmaps")
 
-    grib_file = config["Weatherfiles"]["temperature"]
+    grib_keys = (key for key in config["Weatherfiles"] if key.startswith("temperature"))
     grib_projection = config["Projections"]["in_temperature"]
     grib_variable = "t2m"
     file_template = config["Paths"]["inmaps"] + "/TEMP{:011.3f}"
-    create_inmap_era5_grib(
-        config,
-        rows,
-        cols,
-        cell_centers,
-        grib_file,
-        grib_projection,
-        grib_variable,
-        file_template,
-        converter=kelvin_to_celsius,
-    )
+
+    counter = 0
+    for grib_key in sorted(grib_keys):
+        counter = create_inmap_era5_grib(
+            config,
+            rows,
+            cols,
+            cell_centers,
+            config["Weatherfiles"][grib_key],
+            grib_projection,
+            grib_variable,
+            file_template,
+            converter=kelvin_to_celsius,
+            counter=counter,
+        )
+        if counter == -1:
+            break
 
 
 def create_inmap_era5_grib(
@@ -610,21 +616,29 @@ def create_inmap_precipitation(config, rows, cols, cell_centers):
     Needed values are milli meters."""
     info("Create precipitation inmaps")
 
-    grib_file = config["Weatherfiles"]["precipitation"]
+    grib_keys = (
+        key for key in config["Weatherfiles"] if key.startswith("precipitation")
+    )
     grib_projection = config["Projections"]["in_precipitation"]
     grib_variable = "tp"
     file_template = config["Paths"]["inmaps"] + "/P{:011.3f}"
-    create_inmap_era5_grib_steps(
-        config,
-        rows,
-        cols,
-        cell_centers,
-        grib_file,
-        grib_projection,
-        grib_variable,
-        file_template,
-        converter=lambda m: m / MM,
-    )
+
+    counter = 0
+    for grib_key in sorted(grib_keys):
+        counter = create_inmap_era5_grib_steps(
+            config,
+            rows,
+            cols,
+            cell_centers,
+            config["Weatherfiles"][grib_key],
+            grib_projection,
+            grib_variable,
+            file_template,
+            converter=lambda m: m / MM,
+            counter=counter,
+        )
+        if counter == -1:
+            break
 
 
 def create_inmap_evaporation(config, rows, cols, cell_centers):
@@ -633,21 +647,27 @@ def create_inmap_evaporation(config, rows, cols, cell_centers):
     Needed values are milli meters."""
     info("Create evaporation inmaps")
 
-    grib_file = config["Weatherfiles"]["evaporation"]
+    grib_keys = (key for key in config["Weatherfiles"] if key.startswith("evaporation"))
     grib_projection = config["Projections"]["in_evaporation"]
     grib_variable = "pev"
     file_template = config["Paths"]["inmaps"] + "/PET{:011.3f}"
-    create_inmap_era5_grib_steps(
-        config,
-        rows,
-        cols,
-        cell_centers,
-        grib_file,
-        grib_projection,
-        grib_variable,
-        file_template,
-        converter=lambda m: m / MM,
-    )
+
+    counter = 0
+    for grib_key in sorted(grib_keys):
+        counter = create_inmap_era5_grib_steps(
+            config,
+            rows,
+            cols,
+            cell_centers,
+            config["Weatherfiles"][grib_key],
+            grib_projection,
+            grib_variable,
+            file_template,
+            converter=lambda m: m / MM,
+            counter=counter,
+        )
+        if counter == -1:
+            break
 
 
 def create_inmap_era5_grib_steps(
@@ -660,6 +680,7 @@ def create_inmap_era5_grib_steps(
     grib_variable,
     file_template,
     converter=None,
+    counter=0,
 ):
     """Creates mapstacks from era5 grib files with multiple steps."""
 
@@ -692,7 +713,6 @@ def create_inmap_era5_grib_steps(
     is_second = True
     first_step = None
     max_steps = config.getint("Weatherfiles", "max_steps", fallback=0)
-    counter = 0
     date_time = None
     for steps in grib[grib_variable]:
         for step in steps:
@@ -716,7 +736,7 @@ def create_inmap_era5_grib_steps(
                 is_second = False
             elif max_steps and counter >= max_steps:
                 info(f"max_steps reached at {date_time}")
-                return
+                return -1
 
             # convert values if needed
             if converter:
@@ -740,6 +760,8 @@ def create_inmap_era5_grib_steps(
 
     if date_time:
         info(f"Recording ends at: {date_time}")
+
+    return counter
 
 
 def main():
