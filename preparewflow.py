@@ -495,9 +495,37 @@ def create_inmap_temperature(config, rows, cols, cell_centers):
     Needed values are Celsius."""
     info("Create temperature inmaps")
 
-    converter = kelvin_to_celsius
+    grib_file = config["Weatherfiles"]["temperature"]
+    grib_projection = config["Projections"]["in_temperature"]
+    grib_variable = "t2m"
+    file_template = config["Paths"]["inmaps"] + "/TEMP{:011.3f}"
+    create_inmap_era5_grib(
+        config,
+        rows,
+        cols,
+        cell_centers,
+        grib_file,
+        grib_projection,
+        grib_variable,
+        file_template,
+        converter=kelvin_to_celsius,
+    )
 
-    grib = xr.open_dataset(config["Weatherfiles"]["temperature"], engine="cfgrib")
+
+def create_inmap_era5_grib(
+    config,
+    rows,
+    cols,
+    cell_centers,
+    grib_file,
+    grib_projection,
+    grib_variable,
+    file_template,
+    converter=None,
+    counter=0,
+):
+    """Creates mapstacks from era5 grib files."""
+    grib = xr.open_dataset(grib_file, engine="cfgrib")
 
     # create cell centers in input projection
     xscale = grib.coords["longitude"].data
@@ -510,9 +538,7 @@ def create_inmap_temperature(config, rows, cols, cell_centers):
             input_centers[i][j][1] = ypos
 
     # project cell centers
-    transformer = Transformer.from_crs(
-        config["Projections"]["in_temperature"], config["Projections"]["out"]
-    )
+    transformer = Transformer.from_crs(grib_projection, config["Projections"]["out"])
     input_centers[:, :, 0], input_centers[:, :, 1] = transformer.transform(
         input_centers[:, :, 0], input_centers[:, :, 1]
     )
@@ -528,9 +554,8 @@ def create_inmap_temperature(config, rows, cols, cell_centers):
     is_second = True
     first_step = None
     max_steps = config.getint("Weatherfiles", "max_steps", fallback=0)
-    counter = 0
     date_time = None
-    for step in grib["t2m"]:
+    for step in grib[grib_variable]:
         date_time = np.datetime_as_string(step.time + step.step, unit="s")
 
         if np.isnan(step).all() and is_first:
@@ -551,7 +576,7 @@ def create_inmap_temperature(config, rows, cols, cell_centers):
             is_second = False
         elif max_steps and counter >= max_steps:
             info(f"max_steps reached at {date_time}")
-            return
+            return -1
 
         # convert values if needed
         if converter:
@@ -568,13 +593,15 @@ def create_inmap_temperature(config, rows, cols, cell_centers):
         interpolated = interp(centers_flat).reshape(rows, cols)
         pcr.report(
             pcr.numpy2pcr(pcr.Scalar, interpolated, -9999),
-            f"{config['Paths']['inmaps']}/TEMP{counter/1000:011.3f}",
+            file_template.format(counter / 1000),
         )
 
         counter += 1
 
     if date_time:
         info(f"Recording ends at: {date_time}")
+
+    return counter
 
 
 def create_inmap_precipitation(config, rows, cols, cell_centers):
