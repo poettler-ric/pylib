@@ -64,7 +64,7 @@ def l_transition_i_r_rect(discharge, strickler_roughness, width, t_1, t_2, incli
     i_r = i_r_rect(discharge, strickler_roughness, width, t_1, t_2)
     v_1 = discharge / (width * t_1)
     v_2 = discharge / (width * t_2)
-    return (t_2 + v_2 ** 2 / (2 * GRAVITY) - (t_1 + v_1 ** 1 / (2 * GRAVITY))) / (
+    return (t_2 + v_2 ** 2 / (2 * GRAVITY) - (t_1 + v_1 ** 2 / (2 * GRAVITY))) / (
         inclination - i_r
     )
 
