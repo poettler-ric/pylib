@@ -3,7 +3,7 @@
 from argparse import ArgumentParser
 from configparser import ConfigParser, ExtendedInterpolation
 from json import loads
-from logging import info, debug
+from logging import error, info, debug
 from pyproj import Transformer
 from scipy.interpolate import NearestNDInterpolator
 from shapely.geometry import Point
@@ -17,6 +17,8 @@ import pcraster as pcr
 import shapefile
 import xarray as xr
 from units import MM, kelvin_to_celsius
+from os.path import isfile
+from os import makedirs
 
 # import gdal
 
@@ -504,6 +506,7 @@ def create_inmap_temperature(config, rows, cols, cell_centers):
     grib_projection = config["Projections"]["in_temperature"]
     grib_variable = "t2m"
     file_template = config["Paths"]["inmaps"] + "/TEMP{:011.3f}"
+    makedirs(config["Paths"]["inmaps"], exist_ok=True)
 
     counter = 0
     for grib_key in sorted(grib_keys):
@@ -629,6 +632,7 @@ def create_inmap_precipitation(config, rows, cols, cell_centers):
     grib_projection = config["Projections"]["in_precipitation"]
     grib_variable = "tp"
     file_template = config["Paths"]["inmaps"] + "/P{:011.3f}"
+    makedirs(config["Paths"]["inmaps"], exist_ok=True)
 
     counter = 0
     for grib_key in sorted(grib_keys):
@@ -658,6 +662,7 @@ def create_inmap_evaporation(config, rows, cols, cell_centers):
     grib_projection = config["Projections"]["in_evaporation"]
     grib_variable = "pev"
     file_template = config["Paths"]["inmaps"] + "/PET{:011.3f}"
+    makedirs(config["Paths"]["inmaps"], exist_ok=True)
 
     counter = 0
     for grib_key in sorted(grib_keys):
@@ -778,6 +783,10 @@ def main():
     parser = ArgumentParser(description="Prepare wflow files")
     parser.add_argument("config_file", help="configuration file destination")
     args = parser.parse_args()
+
+    if not isfile(args.config_file):
+        error(f"Configuration file {args.config_file} doesn't exist")
+        exit(1)
 
     config = ConfigParser(interpolation=ExtendedInterpolation())
     config.read(args.config_file)
