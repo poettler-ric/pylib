@@ -578,6 +578,10 @@ def create_inmap_era5_grib(
             # skip first empty records
             debug(f"skipping: {date_time}")
             continue
+        elif np.isnan(step).all():
+            # skip empty records
+            info(f"Skipping: {date_time} due to NaN")
+            continue
         elif is_first:
             # print start
             info(f"Recording starts at: {date_time}")
@@ -734,6 +738,10 @@ def create_inmap_era5_grib_steps(
             if np.isnan(step).all() and is_first:
                 # skip first empty records
                 debug(f"skipping: {date_time}")
+                continue
+            elif np.isnan(step).all():
+                # skip empty records
+                info(f"Skipping: {date_time} due to NaN")
                 continue
             elif is_first:
                 # print start
