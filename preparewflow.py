@@ -232,33 +232,33 @@ def read_soil_to_dict(soils_folder):
     return thetaS, thetaR, c, ksat_ver
 
 
-def create_outlet_map(config, rows, cols, cell_centers):
-    """Creates the outlet map"""
-    info("Generate outlet map")
+def create_gauges_map(config, rows, cols, cell_centers):
+    """Creates the gauges map"""
+    info("Generate gauges map")
 
     INITIAL_VALUE = -9999
-    outlet_array = np.empty((rows, cols))
-    outlet_array[:] = INITIAL_VALUE
+    gauges_array = np.empty((rows, cols))
+    gauges_array[:] = INITIAL_VALUE
 
     counter = 1
-    for name, coords in config["Outlets"].items():
+    for name, coords in config["Gauges"].items():
         point = loads(coords)
         i_x, i_y = find_nearest_neighbour(cell_centers, point)
 
         if i_x == 0 or i_y == 0 or i_x == (rows - 1) or i_y == (cols - 1):
             info(f"{name} is placed at the border of the map")
 
-        if outlet_array[i_x][i_y] != INITIAL_VALUE:
+        if gauges_array[i_x][i_y] != INITIAL_VALUE:
             info(
-                f"Skipping {name} because it would overwrite id {outlet_array[i_x][i_y]}"
+                f"Skipping {name} because it would overwrite id {gauges_array[i_x][i_y]}"
             )
         else:
-            outlet_array[i_x][i_y] = counter
+            gauges_array[i_x][i_y] = counter
             info(f"Wrote {name} with id {counter}")
             counter += 1
 
-    outlet_pcr = pcr.numpy2pcr(pcr.Nominal, outlet_array, PCR_MISSING_VALUE)
-    pcr.report(outlet_pcr, config["Outfiles"]["outlet_map"])
+    gauges_pcr = pcr.numpy2pcr(pcr.Nominal, gauges_array, INITIAL_VALUE)
+    pcr.report(gauges_pcr, config["Outfiles"]["gauges_map"])
 
 
 def create_catchment_mask(config, rows, cols, cell_centers):
@@ -843,7 +843,7 @@ def main():
     cell_centers = init_cellcenter(rows, cols, cell_size, xmin, ymin)
 
     # resolve dependencies
-    need_outlet_map = config.getboolean("Jobs", "outlet_map", fallback=False)
+    need_gauges_map = config.getboolean("Jobs", "gauges_map", fallback=False)
     need_land_use = config.getboolean("Jobs", "land_use_map", fallback=False)
     need_soil_map = config.getboolean("Jobs", "soil_map", fallback=False)
     need_river_width = config.getboolean("Jobs", "river_width", fallback=False)
@@ -875,8 +875,8 @@ def main():
     if need_catchment_mask:
         mask_raster = create_catchment_mask(config, rows, cols, cell_centers)
 
-    if need_outlet_map:
-        create_outlet_map(config, rows, cols, cell_centers)
+    if need_gauges_map:
+        create_gauges_map(config, rows, cols, cell_centers)
 
     if need_river_burn:
         riv_corrected, riv_pcr = create_river_burn(
