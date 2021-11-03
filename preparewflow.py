@@ -257,7 +257,7 @@ def create_gauges_map(config, rows, cols, cell_centers):
             info(f"Wrote {name} with id {counter}")
             counter += 1
 
-    gauges_pcr = pcr.numpy2pcr(pcr.Nominal, gauges_array, INITIAL_VALUE)
+    gauges_pcr = pcr.numpy2pcr(pcr.Scalar, gauges_array, INITIAL_VALUE)
     pcr.report(gauges_pcr, config["Outfiles"]["gauges_map"])
 
 
@@ -273,7 +273,7 @@ def create_catchment_mask(config, rows, cols, cell_centers):
     # creates a numpy array of the mask
     raster = gen_inpoly(first, cell_centers, rows, cols)
     # write raster out
-    mask_raster = pcr.numpy2pcr(pcr.Nominal, raster, PCR_MISSING_VALUE)
+    mask_raster = pcr.numpy2pcr(pcr.Ordinal, raster, PCR_MISSING_VALUE)
     pcr.report(mask_raster, config["Outfiles"]["catchment_mask"])
 
     return mask_raster
@@ -289,7 +289,7 @@ def create_river_burn(config, rows, cols, cell_size, cell_centers):
     riv_corrected = gen_river_connectivity(riv_array, rows, cols)
     ## turn off correction
     riv_corrected = riv_array
-    riv_pcr = pcr.numpy2pcr(pcr.Nominal, riv_corrected, PCR_MISSING_VALUE)
+    riv_pcr = pcr.numpy2pcr(pcr.Ordinal, riv_corrected, PCR_MISSING_VALUE)
     pcr.report(riv_pcr, config["Outfiles"]["river_burn"])
 
     return riv_corrected, riv_pcr
@@ -360,8 +360,7 @@ def create_river_width(config, rows, cols, riv_pcr, stro_np):
             width_np[i][j] = 0.542 * math.exp(0.842 * width_np[i][j])
 
     width_pcr = pcr.numpy2pcr(pcr.Scalar, width_np, PCR_MISSING_VALUE)
-    riv_masked = pcr.ifthen(pcr.boolean(riv_pcr), width_pcr)
-    pcr.report(riv_masked, config["Outfiles"]["river_width_map"])
+    pcr.report(width_pcr, config["Outfiles"]["river_width_map"])
 
 
 def create_soil_maps(config, rows, cols):
