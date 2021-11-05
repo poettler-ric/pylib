@@ -18,7 +18,7 @@ import shapefile
 import xarray as xr
 from units import MM, kelvin_to_celsius
 from os.path import isfile
-from os import makedirs
+from os import makedirs, remove
 
 # import gdal
 
@@ -36,6 +36,15 @@ LOG_LEVEL_MAP = {
 # Missing values for PCRaster maps.
 PCR_MISSING_VALUE = 9999  # originally was 10
 PCR_MISSING_WEATHER_VALUE = -9999
+
+
+def write_pcr(pcrmap, outfile):
+    """Write pcr map to file.
+
+    Wraper to delete the file beforehand, or else it wont be written by pcr.report"""
+    if isfile(outfile):
+        remove(outfile)
+    pcr.report(pcrmap, outfile)
 
 
 # generates a map of all the cell centers of the rasters
@@ -258,7 +267,7 @@ def create_gauges_map(config, rows, cols, cell_centers):
             counter += 1
 
     gauges_pcr = pcr.numpy2pcr(pcr.Scalar, gauges_array, INITIAL_VALUE)
-    pcr.report(gauges_pcr, config["Outfiles"]["gauges_map"])
+    write_pcr(gauges_pcr, config["Outfiles"]["gauges_map"])
 
 
 def create_catchment_mask(config, rows, cols, cell_centers):
@@ -274,7 +283,7 @@ def create_catchment_mask(config, rows, cols, cell_centers):
     raster = gen_inpoly(first, cell_centers, rows, cols)
     # write raster out
     mask_raster = pcr.numpy2pcr(pcr.Ordinal, raster, PCR_MISSING_VALUE)
-    pcr.report(mask_raster, config["Outfiles"]["catchment_mask"])
+    write_pcr(mask_raster, config["Outfiles"]["catchment_mask"])
 
     return mask_raster
 
@@ -290,7 +299,7 @@ def create_river_burn(config, rows, cols, cell_size, cell_centers):
     ## turn off correction
     riv_corrected = riv_array
     riv_pcr = pcr.numpy2pcr(pcr.Ordinal, riv_corrected, PCR_MISSING_VALUE)
-    pcr.report(riv_pcr, config["Outfiles"]["river_burn"])
+    write_pcr(riv_pcr, config["Outfiles"]["river_burn"])
 
     return riv_corrected, riv_pcr
 
@@ -310,7 +319,7 @@ def create_ldd_map(config, dem, riv_corrected):
     ldd = pcr.lddcreate(ldddem, 10.0e35, 10.0e35, 10.0e35, 10.0e35)
     lddrep = pcr.lddrepair(ldd)
     # lddmasked = pcr.ifthen(pcr.boolean(mask_raster), lddrep)
-    pcr.report(lddrep, config["Outfiles"]["ldd_map"])
+    write_pcr(lddrep, config["Outfiles"]["ldd_map"])
 
     ##riv_pcr = pcr.ifthen(pcr.scalar(mask_raster) >= 1, riv_pcr)
     ##disttocatch = pcr.spread(pcr.nominal(mask_raster), 0.0, 1.0)
@@ -341,7 +350,7 @@ def create_streamorder(config, rows, cols, mask_raster, ldd):
 
     stro_corr = pcr.numpy2pcr(pcr.Scalar, stro_np, PCR_MISSING_VALUE)
     stro_masked = pcr.ifthen(pcr.boolean(mask_raster), stro_corr)
-    pcr.report(stro_masked, config["Outfiles"]["streamorder_map"])
+    write_pcr(stro_masked, config["Outfiles"]["streamorder_map"])
 
     return stro_np
 
@@ -361,7 +370,7 @@ def create_river_width(config, rows, cols, riv_pcr, stro_np):
 
     width_pcr = pcr.numpy2pcr(pcr.Scalar, width_np, PCR_MISSING_VALUE)
     riv_masked = pcr.ifthen(pcr.boolean(riv_pcr), width_pcr)
-    pcr.report(riv_masked, config["Outfiles"]["river_width_map"])
+    write_pcr(riv_masked, config["Outfiles"]["river_width_map"])
 
 
 def create_soil_maps(config, rows, cols):
@@ -370,29 +379,29 @@ def create_soil_maps(config, rows, cols):
 
     soil_np = np.ones((rows, cols))
     soil_pcr = pcr.numpy2pcr(pcr.Nominal, soil_np, PCR_MISSING_VALUE)
-    pcr.report(soil_pcr, config["Outfiles"]["soil_map"])
+    write_pcr(soil_pcr, config["Outfiles"]["soil_map"])
 
     # print('Create soil thickness map')
     # soil_thick_np = np.ones((rows,cols)) * soil_thickness
     # soil_thick_pcr = pcr.numpy2pcr(pcr.Scalar,soil_thick_np,PCR_MISSING_VALUE)
-    # pcr.report(soil_thick_pcr, working_folder + '/' + soil_thickness_map)
-    # pcr.report(soil_thick_pcr, working_folder + '/' + min_soil_thickness_map)
+    # write_pcr(soil_thick_pcr, working_folder + '/' + soil_thickness_map)
+    # write_pcr(soil_thick_pcr, working_folder + '/' + min_soil_thickness_map)
     #
     # thetaS, thetaR, c, ksat_ver = read_soil_to_dict(soils_folder)
     #
     # print('Create thetaS')
     # thetaS_pcr = pcr.numpy2pcr(pcr.Scalar,np.copy(thetaS[:,:,0]),PCR_MISSING_VALUE)
     # out_thetaS = working_folder + '/' + thetaS_file
-    # pcr.report(thetaS_pcr, out_thetaS)
+    # write_pcr(thetaS_pcr, out_thetaS)
     # print('Create thetaR')
     # thetaR_pcr = pcr.numpy2pcr(pcr.Scalar,np.copy(thetaR[:,:,0]),PCR_MISSING_VALUE)
     # out_thetaR = working_folder + '/' + thetaR_file
-    # pcr.report(thetaR_pcr, out_thetaR)
+    # write_pcr(thetaR_pcr, out_thetaR)
     #
     # print('ksatver')
     # ksatver_pcr = pcr.numpy2pcr(pcr.Scalar,np.copy(ksat_ver[:,:,0]),PCR_MISSING_VALUE)
     # out_ksat_ver = working_folder + '/' + ksat_ver_file
-    # pcr.report(ksatver_pcr, out_ksat_ver)
+    # write_pcr(ksatver_pcr, out_ksat_ver)
     #
     # print('Create M')
     # M = np.zeros((rows,cols))
@@ -406,14 +415,14 @@ def create_soil_maps(config, rows, cols):
     #
     # M_pcr = pcr.numpy2pcr(pcr.Scalar,M,PCR_MISSING_VALUE)
     # out_ksat_ver = working_folder + '/' + M_file
-    # pcr.report(M_pcr, out_ksat_ver)
+    # write_pcr(M_pcr, out_ksat_ver)
     #
     # print('Create c')
     #
     # for i in range(0,len(take_c)):
     #    c_pcr = pcr.numpy2pcr(pcr.Scalar,np.copy(c[:,:,take_c[i]]),PCR_MISSING_VALUE)
     #    out_c = working_folder + '/c_' + str(i) + '.map'
-    #    pcr.report(c_pcr, out_c)
+    #    write_pcr(c_pcr, out_c)
 
 
 def generate_landuse_lookup(path):
@@ -456,16 +465,16 @@ def create_land_use(config, rows, cols):
             RD[i][j] = row["RD"]
 
     N_pcr = pcr.numpy2pcr(pcr.Scalar, N, PCR_MISSING_VALUE)
-    pcr.report(N_pcr, config["Outfiles"]["N_file"])
+    write_pcr(N_pcr, config["Outfiles"]["N_file"])
     Sl_pcr = pcr.numpy2pcr(pcr.Scalar, Sl, PCR_MISSING_VALUE)
-    pcr.report(Sl_pcr, config["Outfiles"]["Sl_file"])
+    write_pcr(Sl_pcr, config["Outfiles"]["Sl_file"])
     Swood_pcr = pcr.numpy2pcr(pcr.Scalar, Swood, PCR_MISSING_VALUE)
-    pcr.report(Swood_pcr, config["Outfiles"]["Swood_file"])
+    write_pcr(Swood_pcr, config["Outfiles"]["Swood_file"])
     Kext_pcr = pcr.numpy2pcr(pcr.Scalar, Kext, PCR_MISSING_VALUE)
-    pcr.report(Kext_pcr, config["Outfiles"]["Kext_file"])
+    write_pcr(Kext_pcr, config["Outfiles"]["Kext_file"])
     RD_pcr = pcr.numpy2pcr(pcr.Scalar, RD, PCR_MISSING_VALUE)
-    pcr.report(RD_pcr, config["Outfiles"]["rooting_file"])
-    pcr.report(landuse, config["Outfiles"]["landuse_map"])
+    write_pcr(RD_pcr, config["Outfiles"]["rooting_file"])
+    write_pcr(landuse, config["Outfiles"]["landuse_map"])
 
 
 def get_dem_info(dem):
@@ -611,7 +620,7 @@ def create_inmap_era5_grib(
 
         # create map
         interpolated = interp(centers_flat).reshape(rows, cols)
-        pcr.report(
+        write_pcr(
             pcr.numpy2pcr(pcr.Scalar, interpolated, -9999),
             file_template.format(counter / 1000),
         )
@@ -772,7 +781,7 @@ def create_inmap_era5_grib_steps(
 
             # create map
             interpolated = interp(centers_flat).reshape(rows, cols)
-            pcr.report(
+            write_pcr(
                 pcr.numpy2pcr(pcr.Scalar, interpolated, PCR_MISSING_WEATHER_VALUE),
                 file_template.format(counter / 1000),
             )
