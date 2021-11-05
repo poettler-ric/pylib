@@ -360,7 +360,8 @@ def create_river_width(config, rows, cols, riv_pcr, stro_np):
             width_np[i][j] = 0.542 * math.exp(0.842 * width_np[i][j])
 
     width_pcr = pcr.numpy2pcr(pcr.Scalar, width_np, PCR_MISSING_VALUE)
-    pcr.report(width_pcr, config["Outfiles"]["river_width_map"])
+    riv_masked = pcr.ifthen(pcr.boolean(riv_pcr), width_pcr)
+    pcr.report(riv_masked, config["Outfiles"]["river_width_map"])
 
 
 def create_soil_maps(config, rows, cols):
@@ -369,7 +370,7 @@ def create_soil_maps(config, rows, cols):
 
     soil_np = np.ones((rows, cols))
     soil_pcr = pcr.numpy2pcr(pcr.Nominal, soil_np, PCR_MISSING_VALUE)
-    pcr.report(soil_pcr, config["Outfiles"]["river_width_map"])
+    pcr.report(soil_pcr, config["Outfiles"]["soil_map"])
 
     # print('Create soil thickness map')
     # soil_thick_np = np.ones((rows,cols)) * soil_thickness
