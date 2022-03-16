@@ -520,7 +520,7 @@ def create_inmap_temperature(config, rows, cols, cell_centers):
     grib_keys = (key for key in config["Weatherfiles"] if key.startswith("temperature"))
     grib_projection = config["Projections"]["in_temperature"]
     grib_variable = "t2m"
-    file_template = config["Paths"]["inmaps"] + "/TEMP{:011.3f}"
+    file_template = config["Paths"]["inmaps"] + "/TEMP{:08.3f}"
     makedirs(config["Paths"]["inmaps"], exist_ok=True)
 
     counter = 0
@@ -680,7 +680,7 @@ def create_inmap_evaporation(config, rows, cols, cell_centers):
     grib_keys = (key for key in config["Weatherfiles"] if key.startswith("evaporation"))
     grib_projection = config["Projections"]["in_evaporation"]
     grib_variable = "pev"
-    file_template = config["Paths"]["inmaps"] + "/PET{:011.3f}"
+    file_template = config["Paths"]["inmaps"] + "/PET{:09.3f}"
     makedirs(config["Paths"]["inmaps"], exist_ok=True)
 
     counter = 0
