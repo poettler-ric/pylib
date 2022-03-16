@@ -181,54 +181,54 @@ def read_soil_to_dict(soils_folder):
         thetaRi = (
             0.09878
             + 0.002127 * Cli
-            - (8.366 * 10 ** -4) * SIi
+            - (8.366 * 10**-4) * SIi
             - 0.0767 / (OCi + 1)
-            + SIi * Cli * (3.853 * 10 ** -5)
+            + SIi * Cli * (3.853 * 10**-5)
             + 0.00233 * Cli / (OCi + 1)
-            + 9.498 * 10 ** -4 * SIi / (OCi + 1)
+            + 9.498 * 10**-4 * SIi / (OCi + 1)
         )
         thetaSi = (
             0.6819
             + 0.06480 / (OCi + 1)
-            - 0.119 * BDi ** 2.0
+            - 0.119 * BDi**2.0
             - 0.02668
-            + (8.031 * 10 ** -4) * SIi
-            + 0.02312 * BDi ** 2.0 / (OCi + 1.0)
+            + (8.031 * 10**-4) * SIi
+            + 0.02312 * BDi**2.0 / (OCi + 1.0)
             + Cli * 0.001489
-            + 0.01908 * BDi ** 2.0
+            + 0.01908 * BDi**2.0
             - 0.001109 * Cli
-            - (2.315 * 10 ** -5) * SIi * Cli
-            - 0.001197 * SIi * BDi ** 2.0
-            - (1.068 * 10 ** -4) * Cli * BDi ** 2.0
+            - (2.315 * 10**-5) * SIi * Cli
+            - 0.001197 * SIi * BDi**2.0
+            - (1.068 * 10**-4) * Cli * BDi**2.0
         )
         ksat_veri = 240.19 * np.exp(
             19.52348 * thetaSi
             - 8.96847
             - 0.028212 * Cli
-            + 1.8107 * 10 ** -4 * SAi ** 2.0
-            - 9.4125 * 10 ** -3 * Cli ** 2.0
-            - 8.395215 * thetaSi ** 2.0
+            + 1.8107 * 10**-4 * SAi**2.0
+            - 9.4125 * 10**-3 * Cli**2.0
+            - 8.395215 * thetaSi**2.0
             + 0.077718 * SAi * thetaSi
-            - 0.00298 * SAi ** 2.0 * thetaSi ** 2.0
-            - 0.019492 * Cli ** 2 * thetaSi ** 2.0
-            + 1.73 * 10 ** -5 * SAi ** 2.0 * Cli
-            + 0.02733 * Cli ** 2 * thetaSi
-            + 0.001434 * SAi ** 2.0 * thetaSi
-            - 3.5 * 10 ** -6 * Cli ** 2.0 * SAi
+            - 0.00298 * SAi**2.0 * thetaSi**2.0
+            - 0.019492 * Cli**2 * thetaSi**2.0
+            + 1.73 * 10**-5 * SAi**2.0 * Cli
+            + 0.02733 * Cli**2 * thetaSi
+            + 0.001434 * SAi**2.0 * thetaSi
+            - 3.5 * 10**-6 * Cli**2.0 * SAi
         )
         lambda_i = np.exp(
             -0.784
             + 0.018 * SAi
             - 1.062 * thetaSi
-            - SAi ** 2.0 * 5 * 10 ** -5
-            - 0.003 * Cli ** 2.0
-            + 1.111 * thetaSi ** 2.0
+            - SAi**2.0 * 5 * 10**-5
+            - 0.003 * Cli**2.0
+            + 1.111 * thetaSi**2.0
             - 0.031 * SAi * thetaSi
-            + 3.10 ** -4 * SAi ** 2.0 * thetaSi ** 2.0
-            - 0.006 * Cli ** 2.0 * thetaSi ** 2.0
-            - 2 * 10 ** -6 * SAi ** 2.0 * Cli
-            + 0.008 * Cli ** 2.0 * thetaSi
-            - 0.007 * thetaSi ** 2.0 * Cli
+            + 3.10**-4 * SAi**2.0 * thetaSi**2.0
+            - 0.006 * Cli**2.0 * thetaSi**2.0
+            - 2 * 10**-6 * SAi**2.0 * Cli
+            + 0.008 * Cli**2.0 * thetaSi
+            - 0.007 * thetaSi**2.0 * Cli
         )
         ci = 3 + 2 / lambda_i
         if i == 0:
@@ -501,7 +501,7 @@ def get_dem_info(dem):
 
 def split_timedelta64_ns(td):
     """Splits timedelta into days, hours, minutes and seconds portions."""
-    seconds = int(td / (10 ** 9))  # [ns] -> [s]
+    seconds = int(td / (10**9))  # [ns] -> [s]
     minutes = int(seconds / 60)
     seconds %= 60
     hours = int(minutes / 60)
