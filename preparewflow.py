@@ -1,5 +1,11 @@
 #!/bin/env python3
 
+__author__ = "Richard Pöttler"
+__copyright__ = "Copyright (c) 2022 Richard Pöttler"
+__license__ = "MIT"
+__email__ = "richard.poettler@gmail.com"
+
+
 from argparse import ArgumentParser
 from configparser import ConfigParser, ExtendedInterpolation
 from json import loads
