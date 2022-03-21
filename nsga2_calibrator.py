@@ -77,7 +77,7 @@ N [s / m^(1/3))] -> 0.01 - 0.8 [s / m^(1/3))]
 
 """
 ############################
-#       Imports 
+#       Imports
 ############################
 import subprocess
 import sys
@@ -97,53 +97,57 @@ from pymoo.factory import get_termination
 ############################
 
 # cuts data to given time window for evaluation
-def cut_data(data,mask_array):
+def cut_data(data, mask_array):
     # lower value
-    lower = datetime.datetime.strptime(mask_array[0] ,'%d.%m.%Y %H:%M').timestamp()
-    upper = datetime.datetime.strptime(mask_array[1] ,'%d.%m.%Y %H:%M').timestamp()
-    
+    lower = datetime.datetime.strptime(mask_array[0], "%d.%m.%Y %H:%M").timestamp()
+    upper = datetime.datetime.strptime(mask_array[1], "%d.%m.%Y %H:%M").timestamp()
+
     # create mask
-    mask = np.where((data[:,0] >= lower) & (data[:,0] <= upper))[0]
+    mask = np.where((data[:, 0] >= lower) & (data[:, 0] <= upper))[0]
     # cutout data
     array = data[mask]
-    
+
     return array
+
 
 ############################
 #   Measurement wrapper class
 ############################
 
+
 class Measurements:
     def __init__(self, filepath):
         self.filepath = filepath
-        
+
         # init whole gauge data
         self.gauge_data = self.read_data()
-     
+
     # reads all data
     def read_data(self):
         # .timestamp() to convert to unix epoch
         # convert back to timestamp -> datetime.datetime.fromtimestamp(t0)
         time_list = []
         value_list = []
-        
+
         with open(self.filepath) as f:
             for line in f:
                 line = line.split()
-                time_i = datetime.datetime.strptime(line[0] + line[1],'%d.%m.%Y%H:%M:%S').timestamp()
-                
+                time_i = datetime.datetime.strptime(
+                    line[0] + line[1], "%d.%m.%Y%H:%M:%S"
+                ).timestamp()
+
                 time_list.append(time_i)
-                
+
                 # value
-                if re.match(r'^-?\d+(?:\.\d+)$', line[2]) is None:
+                if re.match(r"^-?\d+(?:\.\d+)$", line[2]) is None:
                     value_list.append(np.nan)
                 else:
                     value_list.append(float(line[2]))
 
-        gauge_data = np.column_stack((time_list, value_list)) 
+        gauge_data = np.column_stack((time_list, value_list))
         return gauge_data
 
-        
+
 ############################
 # wflow model wrapper class
 ############################
@@ -162,60 +166,64 @@ class wflowModel:
         self.use_tables = use_tables
         # number of cores to utilize
         self.num_cores = num_cores
-        
+
         # init variables from inifile
         self.init_from_ini()
-        
+
     # parallel processor
     def run_parallel(self, parameters, ensemble):
         # generate number of tasks, which is equal to the number of samples
         number_of_tasks = ensemble.shape[0]
         # generate a pool of tasks
-        #pool = multiprocessing.Pool(number_of_tasks)
+        # pool = multiprocessing.Pool(number_of_tasks)
         pool = multiprocessing.Pool(self.num_cores)
         # asynch run of model
-        print('Spawning processes')
+        print("Spawning processes")
         runs = []
-        for i in range(0,number_of_tasks):
-            run = pool.apply_async(self.run, (i, parameters, ensemble[i,:]))
+        for i in range(0, number_of_tasks):
+            run = pool.apply_async(self.run, (i, parameters, ensemble[i, :]))
             runs.append(run)
         # close and join pooling results
         pool.close()
         pool.join()
-        
-        for i in range(0,len(runs)):
+
+        for i in range(0, len(runs)):
             run_i = runs[i].get()
             if i == 0:
                 array = run_i
             else:
-                array = np.column_stack((array, run_i[:,1]))
-        
-        print('Joining processes')
+                array = np.column_stack((array, run_i[:, 1]))
+
+        print("Joining processes")
         return array
-           
+
     def init_from_ini(self):
-        inifile = open(self.modelpath + '/' + self.inifile,'r')
-        
+        inifile = open(self.modelpath + "/" + self.inifile, "r")
+
         data = inifile.read()
-        data = data.split('\n')
-        
+        data = data.split("\n")
+
         for line in data:
-            if not line.startswith('#'):
-                if 'starttime' in line:
-                    line = line.split('=')[1].strip()
-                    self.starttime = datetime.datetime.strptime(line,'%Y-%m-%d %H:%M:%S').timestamp()
-                if 'endtime' in line:
-                    line = line.split('=')[1].strip()
-                    self.endtime = datetime.datetime.strptime(line,'%Y-%m-%d %H:%M:%S').timestamp()
-                if 'timestepsecs' in line:
-                    self.timestepsecs = float(line.split('=')[1].strip())
-                
+            if not line.startswith("#"):
+                if "starttime" in line:
+                    line = line.split("=")[1].strip()
+                    self.starttime = datetime.datetime.strptime(
+                        line, "%Y-%m-%d %H:%M:%S"
+                    ).timestamp()
+                if "endtime" in line:
+                    line = line.split("=")[1].strip()
+                    self.endtime = datetime.datetime.strptime(
+                        line, "%Y-%m-%d %H:%M:%S"
+                    ).timestamp()
+                if "timestepsecs" in line:
+                    self.timestepsecs = float(line.split("=")[1].strip())
+
         inifile.close()
-    
-    def get_results(self,ID):
+
+    def get_results(self, ID):
         # path to results
-        respath = self.modelpath + '/' + str(ID) + '/run.tss'
-    
+        respath = self.modelpath + "/" + str(ID) + "/run.tss"
+
         time_list = []
         value_list = []
 
@@ -224,16 +232,16 @@ class wflowModel:
             for line in f:
                 line = line.split()
                 try:
-                    time_step = self.starttime + i*self.timestepsecs
+                    time_step = self.starttime + i * self.timestepsecs
                     value_step = float(line[self.use_col])
                     value_list.append(value_step)
                     time_list.append(time_step)
-                    i = i+1
+                    i = i + 1
                 except:
                     continue
-                    
-        sim_data = np.column_stack((time_list, value_list)) 
-        
+
+        sim_data = np.column_stack((time_list, value_list))
+
         return sim_data
 
     # run one model instance
@@ -265,231 +273,295 @@ class wflowModel:
         # -p: set parameter change string (e.g: -P "self.Precipitation = self.Precipitation * 1.11") for
         #     dynamic variables
         # -l: loglevel (most be one of DEBUG, WARNING, ERROR)
-        # -X overwrites the initial values at the end of each timestep        
-    
+        # -X overwrites the initial values at the end of each timestep
+
         # generate inputs
         process_list = []
-        
+
         # mandatory commands
-        process_list.append('-C {0}'.format(self.modelpath))
-        process_list.append('-R {0}'.format(ID))
-        process_list.append('-c {0}'.format(self.inifile))
-        process_list.append('-f')
-        process_list.append('-i {0}'.format(self.use_tables))
-        
+        process_list.append("-C {0}".format(self.modelpath))
+        process_list.append("-R {0}".format(ID))
+        process_list.append("-c {0}".format(self.inifile))
+        process_list.append("-f")
+        process_list.append("-i {0}".format(self.use_tables))
+
         # change variables
-        for i in range(0,len(parameters)):
+        for i in range(0, len(parameters)):
             # genate change string
-            change_string = "self.%s = self.%s * %s" % (parameters[i], parameters[i], parameter_values[i])
+            change_string = "self.%s = self.%s * %s" % (
+                parameters[i],
+                parameters[i],
+                parameter_values[i],
+            )
             # append process
-            process_list.append('-P {0}'.format(change_string))
-        
+            process_list.append("-P {0}".format(change_string))
+
         # spawn child process
-        process = subprocess.Popen([sys.executable, self.wflow_model] + process_list,stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    
+        process = subprocess.Popen(
+            [sys.executable, self.wflow_model] + process_list,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+
         # wait for process to finish
         process.communicate()
-        
+
         # retrieve results
         sim_data = self.get_results(ID)
         return sim_data
-        
+
+
 ############################
 #  Optmizer problem class
 ############################
 class OptimizationProblem(Problem):
+    def __init__(self, *args, **kwargs):
 
-    def __init__(self,*args, **kwargs):
+        self.parameters = kwargs["parameters"]
+        self.modelpath = kwargs["modelpath"]
+        self.inifile = kwargs["inifile"]
+        self.wflow_model = kwargs["wflow_model"]
+        self.opt_functions = kwargs["opt_functions"]
+        self.const_functions = kwargs["const_functions"]
+        self.meas_path = kwargs["gauge_root"]
+        self.use_col = kwargs["use_col"]
+        self.mask_array = kwargs["mask_array"]
+        self.use_tables = kwargs["use_tables"]
+        self.num_cores = kwargs["num_cores"]
 
-        self.parameters = kwargs['parameters']
-        self.modelpath = kwargs['modelpath']
-        self.inifile = kwargs['inifile']
-        self.wflow_model = kwargs['wflow_model']
-        self.opt_functions = kwargs['opt_functions']
-        self.const_functions = kwargs['const_functions']
-        self.meas_path = kwargs['gauge_root']
-        self.use_col = kwargs['use_col']
-        self.mask_array = kwargs['mask_array']
-        self.use_tables = kwargs['use_tables']
-        self.num_cores = kwargs['num_cores']
-        
         # init wflow model
-        self.myModel = wflowModel(self.modelpath, self.inifile, self.wflow_model, self.use_col,self.use_tables,self.num_cores)
-        
+        self.myModel = wflowModel(
+            self.modelpath,
+            self.inifile,
+            self.wflow_model,
+            self.use_col,
+            self.use_tables,
+            self.num_cores,
+        )
+
         # define time dependent variables
-        time_variables = ['Cfmax','K0','KQuickFlow','K4','KD','PERC','Cflux']
-        
+        time_variables = ["Cfmax", "K0", "KQuickFlow", "K4", "KD", "PERC", "Cflux"]
+
         # set lookup table for optimizer
-        opt_lookup = {'Cfmax':'0.001>10',
-                      'CFR':'0.0>0.1',
-                      'TT':'-3.0>4.0',
-                      'TTI':'0.0>7.0',
-                      'WHC':'0.0>0.8',
-                      'FC':'0.1>1000.0',
-                      'BetaSeepage':'0.01>7.0',
-                      'LP':'0.1>1.0',
-                      'K0':'0.5>20.0',
-                      'KQuickFlow':'0.0333333>0.5',
-                      'K4':'0.00833333>0.05',
-                      'KD':'0.003333>0.016667',
-                      'SUZ':'5.0>60.0',
-                      'PERC':'0.01>30.0',
-                      'AlphaPerc':'0.1>0.9',
-                      'Cflux':'0.0>4.0',
-                      'ICF':'0.0>5.0',
-                      'CEVPF': '0.7>1.5',
-                      'N':'0.01>0.8'}
-        
+        opt_lookup = {
+            "Cfmax": "0.001>10",
+            "CFR": "0.0>0.1",
+            "TT": "-3.0>4.0",
+            "TTI": "0.0>7.0",
+            "WHC": "0.0>0.8",
+            "FC": "0.1>1000.0",
+            "BetaSeepage": "0.01>7.0",
+            "LP": "0.1>1.0",
+            "K0": "0.5>20.0",
+            "KQuickFlow": "0.0333333>0.5",
+            "K4": "0.00833333>0.05",
+            "KD": "0.003333>0.016667",
+            "SUZ": "5.0>60.0",
+            "PERC": "0.01>30.0",
+            "AlphaPerc": "0.1>0.9",
+            "Cflux": "0.0>4.0",
+            "ICF": "0.0>5.0",
+            "CEVPF": "0.7>1.5",
+            "N": "0.01>0.8",
+        }
+
         # generate lower and higher ranges
         lower_range = []
         upper_range = []
-        
+
         for param in self.parameters:
-            lookup_param = opt_lookup[param].split('>')
+            lookup_param = opt_lookup[param].split(">")
             lower_i = float(lookup_param[0])
             higher_i = float(lookup_param[1])
             # parameters including timestep have to be converted
             # 86400. = seconds in day
             if param in time_variables:
-                lower_i = lower_i / (86400. / self.myModel.timestepsecs)
-                higher_i = higher_i / (86400. / self.myModel.timestepsecs)
+                lower_i = lower_i / (86400.0 / self.myModel.timestepsecs)
+                higher_i = higher_i / (86400.0 / self.myModel.timestepsecs)
             lower_range.append(lower_i)
             upper_range.append(higher_i)
-            
+
         self.lower_range = np.asarray(lower_range)
         self.upper_range = np.asarray(upper_range)
-        
+
         # init measurements
         self.measurements = Measurements(self.meas_path)
         self.gaugedata = self.measurements.gauge_data
-        
+
         # cut measurement data
-        self.cut_measurements = cut_data(self.gaugedata,self.mask_array)
-        
+        self.cut_measurements = cut_data(self.gaugedata, self.mask_array)
+
         # init from parent class
-        super().__init__(n_var=len(self.parameters),
-                         n_obj=len(self.opt_functions),
-                         n_constr=len(self.const_functions),
-                         xl=self.lower_range,
-                         xu=self.upper_range)
-        
+        super().__init__(
+            n_var=len(self.parameters),
+            n_obj=len(self.opt_functions),
+            n_constr=len(self.const_functions),
+            xl=self.lower_range,
+            xu=self.upper_range,
+        )
+
     # evaluate optimizing things
     def _evaluate(self, x, out, *args, **kwargs):
-        
+
         # perform model runs for this generation
         sim_results = self.myModel.run_parallel(self.parameters, x)
-        
+
         # cut simulation results
-        sim_results_cut = cut_data(sim_results,self.mask_array)
-        
+        sim_results_cut = cut_data(sim_results, self.mask_array)
+
         # evaluate objective functions
         temp = []
         temp_g = []
-        
-        for i in range(0,len(x)):
+
+        for i in range(0, len(x)):
             # loop over objective functions
             obj_functions = []
             const_functions = []
             for obj in self.opt_functions:
                 # evaluate nash sutcliffe
-                if obj == 'NSE':
-                    f = ((1 - ((sim_results_cut[:,i+1]-self.cut_measurements[:,1])**2).sum() / ((self.cut_measurements[:,1]-self.cut_measurements[:,1].mean())**2).sum()))*-1
-                    print('NSE = %s' % f)
+                if obj == "NSE":
+                    f = (
+                        (
+                            1
+                            - (
+                                (
+                                    sim_results_cut[:, i + 1]
+                                    - self.cut_measurements[:, 1]
+                                )
+                                ** 2
+                            ).sum()
+                            / (
+                                (
+                                    self.cut_measurements[:, 1]
+                                    - self.cut_measurements[:, 1].mean()
+                                )
+                                ** 2
+                            ).sum()
+                        )
+                    ) * -1
+                    print("NSE = %s" % f)
                     obj_functions.append(f)
-                if obj == 'VOL':
-                    f = abs(self.cut_measurements[:,1]-sim_results[:,i+1]).sum()/self.cut_measurements[:,1].sum()
+                if obj == "VOL":
+                    f = (
+                        abs(self.cut_measurements[:, 1] - sim_results[:, i + 1]).sum()
+                        / self.cut_measurements[:, 1].sum()
+                    )
                     obj_functions.append(f)
-            
+
             for const in self.const_functions:
                 # evalute max
-                if const == 'MAXQ':
-                    g = max(sim_results[:,i+1]) - max(self.cut_measurements[:,1])*2.0
+                if const == "MAXQ":
+                    g = (
+                        max(sim_results[:, i + 1])
+                        - max(self.cut_measurements[:, 1]) * 2.0
+                    )
                     const_functions.append(g)
-        
+
             temp.append(obj_functions)
             temp_g.append(const_functions)
-            
+
         # append objective functions
         out["F"] = np.column_stack([temp])
         out["G"] = np.column_stack([temp_g])
-        
-#################################   
+
+
+#################################
 #          Main routine
 #################################
 
+
 def main():
-    #################################   
+    #################################
     #          Settings
     #################################
-    
+
     # wflow model settings
     # path to wflow model to optimize
-    modelpath = r'/home/iwbworkstation/Desktop/working_dir/model_rerun_paper1/NSGA2/Model_200m_HBV'
+    modelpath = config["Paths"]["model"]
     # name of the steering file
-    inifile = r'wflow_hbv.ini'
+    inifile = config["Paths"]["inifile"]
     # path to wflow model, we have to modify some things. For some reason subprocess messes up the strings
     # so for the arguments we have to strip the arguments in the source code like:
-    #for o, a in opts:
-        #o = o.strip()
-        #a = a.strip()
-    wflow_model = r'/home/iwbworkstation/wflow2019.1/wflow/wflow_hbv_TUG.py'
+    # for o, a in opts:
+    # o = o.strip()
+    # a = a.strip()
+    wflow_model = config["Paths"]["wflow_model"]
     # define which tables to use. Parameters which should be optimized should be set to 1 so we get correct
     # values by multiplication
-    use_tables = r'intbl_NSGA2'
+    use_tables = r"intbl_NSGA2"
     # define coloumn for which we evaluate the discharge of the modelling results
     # in run.tss
     use_col = 3
     # define the number of physical cpu cores to utilize
-    num_cores = 20
-    
+    num_cores = config.getint("Configuration", "num_cores", fallback=1)
+
     # measurement settings
-    gauge_root = r'/home/iwbworkstation/Desktop/working_dir/Pegel/Qow3010_Oct04050607.dat'
-    
+    gauge_root = config["Paths"]["gauge_root"]
+
     # optimizer settings
     # define parameters to optimize. The value ranges and time conversions are taken care off
     # automatically
-    parameters = ['Cfmax','CFR','TT','TTI','WHC',
-                  'FC','BetaSeepage','LP','K0','KQuickFlow',
-                  'K4','KD','SUZ','PERC','AlphaPerc','Cflux',
-                  'ICF','CEVPF','N']
+    parameters = [
+        "Cfmax",
+        "CFR",
+        "TT",
+        "TTI",
+        "WHC",
+        "FC",
+        "BetaSeepage",
+        "LP",
+        "K0",
+        "KQuickFlow",
+        "K4",
+        "KD",
+        "SUZ",
+        "PERC",
+        "AlphaPerc",
+        "Cflux",
+        "ICF",
+        "CEVPF",
+        "N",
+    ]
     # define optimizer range for evaluation. This is not the simulation period!!
     # it defines merely between which time stamps the objective functions are
     # evaluated
     # optimizer range, range = [start,end] %d.%m.%Y %H:M%
-    mask_array = ['01.10.2004 00:00', '31.12.2007 23:45']
+    mask_array = ["01.10.2004 00:00", "31.12.2007 23:45"]
     # Define objective functions and constraints
     # options are:
     # NSE: minimize Nash sutcliffe
     # VOL: minimize volume error
-    opt_functions = ['NSE','VOL']
+    opt_functions = ["NSE", "VOL"]
     # MAXQ: constraint of maximum discharge
-    const_functions = ['MAXQ']
+    const_functions = ["MAXQ"]
     const_functions = []
     # define population size for NSGA alogrithm
     pop_size = 120
     # define number of generations
     n_gen = 8
-    
-    #################################   
+
+    #################################
     #    Init and run optimizer
     #################################
-    
+
     # init our optimization problem
-    problem = OptimizationProblem(parameters = parameters,
-                                  modelpath = modelpath,
-                                  inifile = inifile,
-                                  wflow_model = wflow_model,
-                                  opt_functions = opt_functions,
-                                  const_functions = const_functions,
-                                  gauge_root = gauge_root,
-                                  use_col = use_col,
-                                  mask_array = mask_array,
-                                  use_tables = use_tables,
-                                  num_cores = num_cores)
-    
+    problem = OptimizationProblem(
+        parameters=parameters,
+        modelpath=modelpath,
+        inifile=inifile,
+        wflow_model=wflow_model,
+        opt_functions=opt_functions,
+        const_functions=const_functions,
+        gauge_root=gauge_root,
+        use_col=use_col,
+        mask_array=mask_array,
+        use_tables=use_tables,
+        num_cores=num_cores,
+    )
+
     # get termination condition, here number of generations
     termination = get_termination("n_gen", n_gen)
-    
+
     # define optimization alogrithm
     algorithm = NSGA2(
         pop_size,
@@ -497,34 +569,34 @@ def main():
         sampling=get_sampling("real_random"),
         crossover=get_crossover("real_sbx", prob=0.9, eta=15),
         mutation=get_mutation("real_pm", eta=20),
-        eliminate_duplicates=True
+        eliminate_duplicates=True,
     )
-    
+
     # minimize the problems residuals
-    res = minimize(problem,
-                   algorithm,
-                   termination,
-                   seed=1,
-                   save_history=True,
-                   verbose=True)
-    
-    #################################   
-    #    Retrieve results for 
+    res = minimize(
+        problem, algorithm, termination, seed=1, save_history=True, verbose=True
+    )
+
+    #################################
+    #    Retrieve results for
     #   optimized parameter set
     #################################
-    
+
     # init wflow object
-    reWflow = wflowModel(modelpath, inifile, wflow_model, use_col,use_tables, num_cores)
-    
+    reWflow = wflowModel(
+        modelpath, inifile, wflow_model, use_col, use_tables, num_cores
+    )
+
     # retrieve the optimized parameter sets
     optpars = res.X
     # remove temp working directories
-    for i in range(0,pop_size):
-        shutil.rmtree(modelpath + '/{0}'.format(i))
-    
-    print('Start recomputing optimized results')
-    reWflow.run_parallel(parameters,optpars)
-    print('Finished optimization')
-    
+    for i in range(0, pop_size):
+        shutil.rmtree(modelpath + "/{0}".format(i))
+
+    print("Start recomputing optimized results")
+    reWflow.run_parallel(parameters, optpars)
+    print("Finished optimization")
+
+
 if __name__ == "__main__":
     main()
