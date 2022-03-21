@@ -683,6 +683,10 @@ def create_inmap_evaporation(config, rows, cols, cell_centers):
     file_template = config["Paths"]["inmaps"] + "/PET{:09.3f}"
     makedirs(config["Paths"]["inmaps"], exist_ok=True)
 
+    converter = lambda m: m / MM
+    if config.getboolean("Weatherfiles", "ecmwf_evaporation", fallback=False):
+        converter = lambda m: -m.clip(max=0) / MM
+
     counter = 0
     for grib_key in sorted(grib_keys):
         counter = create_inmap_era5_grib_steps(
@@ -694,7 +698,7 @@ def create_inmap_evaporation(config, rows, cols, cell_centers):
             grib_projection,
             grib_variable,
             file_template,
-            converter=lambda m: m / MM,
+            converter=converter,
             counter=counter,
         )
         if counter == -1:
