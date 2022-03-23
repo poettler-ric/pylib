@@ -522,7 +522,7 @@ def main():
 
     # wflow model settings
     # path to wflow model to optimize
-    modelpath = config["Model"]["model"]
+    modelpath = config["Model"]["modelpath"]
     # name of the steering file
     inifile = config["Model"]["inifile"]
     # path to wflow model, we have to modify some things. For some reason subprocess messes up the strings
