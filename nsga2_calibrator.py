@@ -92,6 +92,22 @@ from pymoo.factory import get_sampling, get_crossover, get_mutation
 from pymoo.optimize import minimize
 from pymoo.factory import get_termination
 
+from argparse import ArgumentParser
+from logging import error, info, debug
+import logging
+from os.path import isfile
+from configparser import ConfigParser, ExtendedInterpolation
+
+"""Mapping from log level strings to logging levels"""
+LOG_LEVEL_MAP = {
+    "critical": logging.CRITICAL,
+    "error": logging.ERROR,
+    "warning": logging.WARNING,
+    "info": logging.INFO,
+    "debug": logging.DEBUG,
+}
+
+
 ############################
 #    Helper functions
 ############################
@@ -178,7 +194,7 @@ class wflowModel:
         # pool = multiprocessing.Pool(number_of_tasks)
         pool = multiprocessing.Pool(self.num_cores)
         # asynch run of model
-        print("Spawning processes")
+        info("Spawning processes")
         runs = []
         for i in range(0, number_of_tasks):
             run = pool.apply_async(self.run, (i, parameters, ensemble[i, :]))
@@ -194,7 +210,7 @@ class wflowModel:
             else:
                 array = np.column_stack((array, run_i[:, 1]))
 
-        print("Joining processes")
+        info("Joining processes")
         return array
 
     def init_from_ini(self):
@@ -439,7 +455,7 @@ class OptimizationProblem(Problem):
                             ).sum()
                         )
                     ) * -1
-                    print("NSE = %s" % f)
+                    info("NSE = %s" % f)
                     obj_functions.append(f)
                 if obj == "VOL":
                     f = (
@@ -471,32 +487,61 @@ class OptimizationProblem(Problem):
 
 
 def main():
+    parser = ArgumentParser(description="Prepare wflow files")
+    parser.add_argument("config_file", help="configuration file destination")
+    args = parser.parse_args()
+
+    if not isfile(args.config_file):
+        error(f"Configuration file {args.config_file} doesn't exist")
+        exit(1)
+
+    config = ConfigParser(interpolation=ExtendedInterpolation())
+    config.read(args.config_file)
+
+    root_logger = logging.getLogger()
+    log_formatter = logging.Formatter("%(levelname)s %(asctime)s: %(message)s")
+    log_level = LOG_LEVEL_MAP.get(
+        config.get("Configuration", "log_level", fallback="INFO").lower(),
+        logging.INFO,
+    )
+    root_logger.setLevel(log_level)
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(log_formatter)
+    root_logger.addHandler(console_handler)
+
+    log_file = config.get("Configuration", "log_file", fallback=None)
+    if log_file:
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setFormatter(log_formatter)
+        root_logger.addHandler(file_handler)
+
     #################################
     #          Settings
     #################################
 
     # wflow model settings
     # path to wflow model to optimize
-    modelpath = config["Paths"]["model"]
+    modelpath = config["Model"]["model"]
     # name of the steering file
-    inifile = config["Paths"]["inifile"]
+    inifile = config["Model"]["inifile"]
     # path to wflow model, we have to modify some things. For some reason subprocess messes up the strings
     # so for the arguments we have to strip the arguments in the source code like:
     # for o, a in opts:
     # o = o.strip()
     # a = a.strip()
-    wflow_model = config["Paths"]["wflow_model"]
+    wflow_model = config["Model"]["wflow_model"]
     # define which tables to use. Parameters which should be optimized should be set to 1 so we get correct
     # values by multiplication
     use_tables = r"intbl_NSGA2"
     # define coloumn for which we evaluate the discharge of the modelling results
     # in run.tss
-    use_col = 3
+    use_col = config.getint("Calibration", "run_tss_col")
     # define the number of physical cpu cores to utilize
     num_cores = config.getint("Configuration", "num_cores", fallback=1)
 
     # measurement settings
-    gauge_root = config["Paths"]["gauge_root"]
+    gauge_root = config["Calibration"]["gauge_root"]
 
     # optimizer settings
     # define parameters to optimize. The value ranges and time conversions are taken care off
@@ -526,7 +571,7 @@ def main():
     # it defines merely between which time stamps the objective functions are
     # evaluated
     # optimizer range, range = [start,end] %d.%m.%Y %H:M%
-    mask_array = ["01.10.2004 00:00", "31.12.2007 23:45"]
+    mask_array = [config["Calibration"]["from_time"], config["Calibration"]["to_time"]]
     # Define objective functions and constraints
     # options are:
     # NSE: minimize Nash sutcliffe
@@ -593,9 +638,9 @@ def main():
     for i in range(0, pop_size):
         shutil.rmtree(modelpath + "/{0}".format(i))
 
-    print("Start recomputing optimized results")
+    info("Start recomputing optimized results")
     reWflow.run_parallel(parameters, optpars)
-    print("Finished optimization")
+    info("Finished optimization")
 
 
 if __name__ == "__main__":
