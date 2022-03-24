@@ -91,6 +91,8 @@ from pymoo.algorithms.nsga2 import NSGA2
 from pymoo.factory import get_sampling, get_crossover, get_mutation
 from pymoo.optimize import minimize
 from pymoo.factory import get_termination
+import pytz
+import matplotlib.pyplot as plt
 
 from argparse import ArgumentParser
 from logging import error, info, debug
@@ -114,9 +116,21 @@ LOG_LEVEL_MAP = {
 
 # cuts data to given time window for evaluation
 def cut_data(data, mask_array):
+    # timezone
+    timezone = pytz.timezone("UTC")
     # lower value
-    lower = datetime.datetime.strptime(mask_array[0], "%d.%m.%Y %H:%M").timestamp()
-    upper = datetime.datetime.strptime(mask_array[1], "%d.%m.%Y %H:%M").timestamp()
+    lower_obj = datetime.datetime.strptime(mask_array[0], "%d.%m.%Y %H:%M")
+    # lower localized
+    lower_localized = timezone.localize(lower_obj)
+    # lwoer timestamp
+    lower = lower_localized.timestamp()
+
+    # upper value
+    upper_obj = datetime.datetime.strptime(mask_array[1], "%d.%m.%Y %H:%M")
+    # lower localized
+    upper_localized = timezone.localize(upper_obj)
+    # lwoer timestamp
+    upper = upper_localized.timestamp()
 
     # create mask
     mask = np.where((data[:, 0] >= lower) & (data[:, 0] <= upper))[0]
@@ -132,8 +146,11 @@ def cut_data(data, mask_array):
 
 
 class Measurements:
-    def __init__(self, filepath):
+    def __init__(self, filepath, timezone):
         self.filepath = filepath
+
+        # timezone
+        self.timezone = timezone
 
         # init whole gauge data
         self.gauge_data = self.read_data()
@@ -148,11 +165,16 @@ class Measurements:
         with open(self.filepath) as f:
             for line in f:
                 line = line.split()
+                # get time object in local zone
                 time_i = datetime.datetime.strptime(
                     line[0] + line[1], "%d.%m.%Y%H:%M:%S"
-                ).timestamp()
-
-                time_list.append(time_i)
+                )
+                # set local timezone
+                time_localized = self.timezone.localize(time_i)
+                # get unix epoch timestamp
+                time_unix = time_localized.timestamp()
+                # append unix epoch
+                time_list.append(time_unix)
 
                 # value
                 if re.match(r"^-?\d+(?:\.\d+)$", line[2]) is None:
@@ -168,7 +190,9 @@ class Measurements:
 # wflow model wrapper class
 ############################
 class wflowModel:
-    def __init__(self, modelpath, inifile, wflow_model, use_col, use_tables, num_cores):
+    def __init__(
+        self, modelpath, inifile, wflow_model, use_col, use_tables, num_cores, timezone
+    ):
         # init general model settings
         # path to model folder
         self.modelpath = modelpath
@@ -182,6 +206,9 @@ class wflowModel:
         self.use_tables = use_tables
         # number of cores to utilize
         self.num_cores = num_cores
+
+        # model timezone
+        self.timezone = timezone
 
         # init variables from inifile
         self.init_from_ini()
@@ -223,14 +250,20 @@ class wflowModel:
             if not line.startswith("#"):
                 if "starttime" in line:
                     line = line.split("=")[1].strip()
-                    self.starttime = datetime.datetime.strptime(
-                        line, "%Y-%m-%d %H:%M:%S"
-                    ).timestamp()
+                    # get start time from ini file
+                    start = datetime.datetime.strptime(line, "%Y-%m-%d %H:%M:%S")
+                    # localize time
+                    start_localized = self.timezone.localize(start)
+                    # start time unix epoch
+                    self.starttime = start_localized.timestamp()
                 if "endtime" in line:
                     line = line.split("=")[1].strip()
-                    self.endtime = datetime.datetime.strptime(
-                        line, "%Y-%m-%d %H:%M:%S"
-                    ).timestamp()
+                    # get end time from ini file
+                    end = datetime.datetime.strptime(line, "%Y-%m-%d %H:%M:%S")
+                    # localize time
+                    end_localized = self.timezone.localize(end)
+                    # end time unix epoch
+                    self.endtime = end_localized.timestamp()
                 if "timestepsecs" in line:
                     self.timestepsecs = float(line.split("=")[1].strip())
 
@@ -344,6 +377,8 @@ class OptimizationProblem(Problem):
         self.mask_array = kwargs["mask_array"]
         self.use_tables = kwargs["use_tables"]
         self.num_cores = kwargs["num_cores"]
+        self.timezone_gauge = kwargs["timezone_gauge"]
+        self.timezone_model = kwargs["timezone_model"]
 
         # init wflow model
         self.myModel = wflowModel(
@@ -353,10 +388,20 @@ class OptimizationProblem(Problem):
             self.use_col,
             self.use_tables,
             self.num_cores,
+            self.timezone_model,
         )
 
         # define time dependent variables
-        time_variables = ["Cfmax", "K0", "KQuickFlow", "K4", "KD", "PERC", "Cflux"]
+        time_variables = [
+            "Cfmax",
+            "K0",
+            "KQuickFlow",
+            "K4",
+            "KD",
+            "PERC",
+            "Cflux",
+            "Leakage",
+        ]
 
         # set lookup table for optimizer
         opt_lookup = {
@@ -379,6 +424,7 @@ class OptimizationProblem(Problem):
             "ICF": "0.0>5.0",
             "CEVPF": "0.7>1.5",
             "N": "0.01>0.8",
+            "Leakage": "0.0>2.0",
         }
 
         # generate lower and higher ranges
@@ -401,7 +447,7 @@ class OptimizationProblem(Problem):
         self.upper_range = np.asarray(upper_range)
 
         # init measurements
-        self.measurements = Measurements(self.meas_path)
+        self.measurements = Measurements(self.meas_path, self.timezone_gauge)
         self.gaugedata = self.measurements.gauge_data
 
         # cut measurement data
@@ -416,7 +462,7 @@ class OptimizationProblem(Problem):
             xu=self.upper_range,
         )
 
-    # evaluate optimizing things
+    # evaluate optimizing thingsin local zone
     def _evaluate(self, x, out, *args, **kwargs):
 
         # perform model runs for this generation
@@ -459,7 +505,9 @@ class OptimizationProblem(Problem):
                     obj_functions.append(f)
                 if obj == "VOL":
                     f = (
-                        abs(self.cut_measurements[:, 1] - sim_results[:, i + 1]).sum()
+                        abs(
+                            self.cut_measurements[:, 1] - sim_results_cut[:, i + 1]
+                        ).sum()
                         / self.cut_measurements[:, 1].sum()
                     )
                     obj_functions.append(f)
@@ -542,6 +590,10 @@ def main():
 
     # measurement settings
     gauge_root = config["Calibration"]["gauge_root"]
+    # set timezone of gauge data !!careful timezones are inverted!!
+    # so gmt -1 is actually gmt +1
+    timezone_gauge = pytz.timezone("Etc/GMT-1")
+    timezone_model = pytz.timezone("UTC")
 
     # optimizer settings
     # define parameters to optimize. The value ranges and time conversions are taken care off
@@ -566,6 +618,7 @@ def main():
         "ICF",
         "CEVPF",
         "N",
+        "Leakage",
     ]
     # define optimizer range for evaluation. This is not the simulation period!!
     # it defines merely between which time stamps the objective functions are
@@ -602,6 +655,8 @@ def main():
         mask_array=mask_array,
         use_tables=use_tables,
         num_cores=num_cores,
+        timezone_gauge=timezone_gauge,
+        timezone_model=timezone_model,
     )
 
     # get termination condition, here number of generations
@@ -629,7 +684,7 @@ def main():
 
     # init wflow object
     reWflow = wflowModel(
-        modelpath, inifile, wflow_model, use_col, use_tables, num_cores
+        modelpath, inifile, wflow_model, use_col, use_tables, num_cores, timezone_model
     )
 
     # retrieve the optimized parameter sets
