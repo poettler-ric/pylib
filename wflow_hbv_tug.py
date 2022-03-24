@@ -308,6 +308,7 @@ class WflowModel(pcraster.framework.DynamicModel):
     :var K4.tbl: Recession constant baseflow (0.02307)
     :var KD.tbl: Recession constant for deep flow
     :var AlphaPerc: Percent going to Lower zone and to deep groundwater zone
+    
 
     *If SetKquickFlow is set to 1*
 
@@ -723,13 +724,20 @@ class WflowModel(pcraster.framework.DynamicModel):
             self.Soil,
             0.02307,
         )  # Recession constant baseflow   #K4=0.07; BASEFLOW:LINEARRESERVOIR
+        self.Leakage = self.readtblDefault(
+            self.Dir + "/" + self.intbl + "/Leakage.tbl",
+            self.LandUse,
+            subcatch,
+            self.Soil,
+            0.0,
+        )  # Water loss to other catchments
         self.KD = self.readtblDefault(
             self.Dir + "/" + self.intbl + "/KD.tbl",
             self.LandUse,
             subcatch,
             self.Soil,
             0.001,
-        )  # Recession constant deep flow
+        )  # Recession constant deep flow, gegese
         self.AlphaPerc = self.readtblDefault(
             self.Dir + "/" + self.intbl + "/AlphaPerc.tbl",
             self.LandUse,
@@ -1561,7 +1569,6 @@ class WflowModel(pcraster.framework.DynamicModel):
         self.LowerZoneStorage = self.LowerZoneStorage + self.Percolation * (1-self.AlphaPerc)
         self.DeepStorage = self.DeepStorage + self.Percolation * self.AlphaPerc
 
-
         self.BaseFlow = pcr.min(
             self.LowerZoneStorage, self.K4 * self.LowerZoneStorage
         )  #: Baseflow in mm/timestep
@@ -1572,6 +1579,9 @@ class WflowModel(pcraster.framework.DynamicModel):
 
         self.LowerZoneStorage = self.LowerZoneStorage - self.BaseFlow
         self.DeepStorage = self.DeepStorage - DeepFlow
+
+        # gegese: consider leakage
+        self.DeepStorage = pcr.max(self.DeepStorage - self.Leakage, 0.0)
 
         # @gegese
         print('UpperZoneStorage = ' + str(np.mean(pcr.pcr2numpy(self.UpperZoneStorage,0.0))))
