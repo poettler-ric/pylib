@@ -83,7 +83,7 @@ import subprocess
 import sys
 import numpy as np
 import multiprocessing
-import datetime
+from datetime import datetime
 import re
 import shutil
 from pymoo.model.problem import Problem
@@ -119,14 +119,14 @@ def cut_data(data, mask_array):
     # timezone
     timezone = pytz.timezone("UTC")
     # lower value
-    lower_obj = datetime.datetime.strptime(mask_array[0], "%d.%m.%Y %H:%M")
+    lower_obj = datetime.strptime(mask_array[0], "%d.%m.%Y %H:%M")
     # lower localized
     lower_localized = timezone.localize(lower_obj)
     # lwoer timestamp
     lower = lower_localized.timestamp()
 
     # upper value
-    upper_obj = datetime.datetime.strptime(mask_array[1], "%d.%m.%Y %H:%M")
+    upper_obj = datetime.strptime(mask_array[1], "%d.%m.%Y %H:%M")
     # lower localized
     upper_localized = timezone.localize(upper_obj)
     # lwoer timestamp
@@ -158,7 +158,7 @@ class Measurements:
     # reads all data
     def read_data(self):
         # .timestamp() to convert to unix epoch
-        # convert back to timestamp -> datetime.datetime.fromtimestamp(t0)
+        # convert back to timestamp -> datetime.fromtimestamp(t0)
         time_list = []
         value_list = []
 
@@ -166,9 +166,7 @@ class Measurements:
             for line in f:
                 line = line.split()
                 # get time object in local zone
-                time_i = datetime.datetime.strptime(
-                    line[0] + line[1], "%d.%m.%Y%H:%M:%S"
-                )
+                time_i = datetime.strptime(line[0] + line[1], "%d.%m.%Y%H:%M:%S")
                 # set local timezone
                 time_localized = self.timezone.localize(time_i)
                 # get unix epoch timestamp
@@ -251,7 +249,7 @@ class wflowModel:
                 if "starttime" in line:
                     line = line.split("=")[1].strip()
                     # get start time from ini file
-                    start = datetime.datetime.strptime(line, "%Y-%m-%d %H:%M:%S")
+                    start = datetime.strptime(line, "%Y-%m-%d %H:%M:%S")
                     # localize time
                     start_localized = self.timezone.localize(start)
                     # start time unix epoch
@@ -259,7 +257,7 @@ class wflowModel:
                 if "endtime" in line:
                     line = line.split("=")[1].strip()
                     # get end time from ini file
-                    end = datetime.datetime.strptime(line, "%Y-%m-%d %H:%M:%S")
+                    end = datetime.strptime(line, "%Y-%m-%d %H:%M:%S")
                     # localize time
                     end_localized = self.timezone.localize(end)
                     # end time unix epoch
