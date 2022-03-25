@@ -140,48 +140,30 @@ def cut_data(data, mask_array):
     return array
 
 
-############################
-#   Measurement wrapper class
-############################
+def to_float_nan(v):
+    try:
+        return float(v)
+    except ValueError:
+        return np.nan
 
 
-class Measurements:
-    def __init__(self, filepath, timezone):
-        self.filepath = filepath
+def read_gauge_data(filepath, timezone):
+    time_list = []
+    value_list = []
 
-        # timezone
-        self.timezone = timezone
+    with open(filepath) as f:
+        for line in f:
+            line = line.split(",")
 
-        # init whole gauge data
-        self.gauge_data = self.read_data()
+            time_list.append(
+                timezone.localize(
+                    datetime.strptime(line[0], "%d.%m.%Y %H:%M:%S")
+                ).timestamp()
+            )
 
-    # reads all data
-    def read_data(self):
-        # .timestamp() to convert to unix epoch
-        # convert back to timestamp -> datetime.fromtimestamp(t0)
-        time_list = []
-        value_list = []
+            value_list.append(to_float_nan(line[1]))
 
-        with open(self.filepath) as f:
-            for line in f:
-                line = line.split()
-                # get time object in local zone
-                time_i = datetime.strptime(line[0] + line[1], "%d.%m.%Y%H:%M:%S")
-                # set local timezone
-                time_localized = self.timezone.localize(time_i)
-                # get unix epoch timestamp
-                time_unix = time_localized.timestamp()
-                # append unix epoch
-                time_list.append(time_unix)
-
-                # value
-                if re.match(r"^-?\d+(?:\.\d+)$", line[2]) is None:
-                    value_list.append(np.nan)
-                else:
-                    value_list.append(float(line[2]))
-
-        gauge_data = np.column_stack((time_list, value_list))
-        return gauge_data
+    return np.column_stack((time_list, value_list))
 
 
 ############################
@@ -445,8 +427,7 @@ class OptimizationProblem(Problem):
         self.upper_range = np.asarray(upper_range)
 
         # init measurements
-        self.measurements = Measurements(self.meas_path, self.timezone_gauge)
-        self.gaugedata = self.measurements.gauge_data
+        self.gaugedata = read_gauge_data(self.meas_path, self.timezone_gauge)
 
         # cut measurement data
         self.cut_measurements = cut_data(self.gaugedata, self.mask_array)
