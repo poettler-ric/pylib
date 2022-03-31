@@ -210,12 +210,10 @@ class wflowModel:
         pool.close()
         pool.join()
 
+        array = None
         for i in range(0, len(runs)):
             run_i = runs[i].get()
-            if i == 0:
-                array = run_i
-            else:
-                array = np.column_stack((array, run_i[:, 1]))
+            array = run_i if array is None else np.column_stack((array, run_i[:, 1]))
 
         info("Joining processes")
         return array
