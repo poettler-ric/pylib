@@ -324,6 +324,7 @@ class wflowModel:
             process_list.append("-P {0}".format(change_string))
 
         # spawn child process
+        debug(f"Starting process {ID}")
         process = subprocess.Popen(
             [sys.executable, self.wflow_model] + process_list,
             stdout=subprocess.PIPE,
