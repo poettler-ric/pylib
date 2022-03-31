@@ -611,9 +611,9 @@ def main():
     const_functions = ["MAXQ"]
     const_functions = []
     # define population size for NSGA alogrithm
-    pop_size = 120
+    pop_size = config.getint("Calibration", "pop_size")
     # define number of generations
-    n_gen = 8
+    n_gen = config.getint("Calibration", "generations")
 
     #################################
     #    Init and run optimizer
