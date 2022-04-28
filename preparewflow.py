@@ -11,7 +11,7 @@ from configparser import ConfigParser, ExtendedInterpolation
 from json import loads
 from logging import error, info, debug
 from pyproj import Transformer
-from scipy.interpolate import NearestNDInterpolator
+from scipy.interpolate import griddata
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 
@@ -622,10 +622,10 @@ def create_inmap_era5_grib(
         (step_rows, step_cols) = np.shape(step)
         assert step_rows == len(yscale), "length of rows doesn't match"
         assert step_cols == len(xscale), "length of columns doesn't match"
-        interp = NearestNDInterpolator(input_centers, input_values_flat)
 
-        # create map
-        interpolated = interp(centers_flat).reshape(rows, cols)
+        interpolated = griddata(input_centers, input_values_flat, centers_flat).reshape(
+            rows, cols
+        )
         write_pcr(
             pcr.numpy2pcr(pcr.Scalar, interpolated, -9999),
             file_template.format(counter / 1000),
@@ -787,10 +787,10 @@ def create_inmap_era5_grib_steps(
             (step_rows, step_cols) = np.shape(step)
             assert step_rows == len(yscale), "length of rows doesn't match"
             assert step_cols == len(xscale), "length of columns doesn't match"
-            interp = NearestNDInterpolator(input_centers, input_values_flat)
+            interpolated = griddata(
+                input_centers, input_values_flat, centers_flat
+            ).reshape(rows, cols)
 
-            # create map
-            interpolated = interp(centers_flat).reshape(rows, cols)
             write_pcr(
                 pcr.numpy2pcr(pcr.Scalar, interpolated, PCR_MISSING_WEATHER_VALUE),
                 file_template.format(counter / 1000),
