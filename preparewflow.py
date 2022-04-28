@@ -562,22 +562,22 @@ def create_inmap_era5_grib(
     xscale = grib.coords["longitude"].data
     yscale = grib.coords["latitude"].data
 
-    input_centers = np.zeros((len(yscale), len(xscale), 2))
-    for i, ypos in enumerate(yscale):
-        for j, xpos in enumerate(xscale):
-            input_centers[i][j][0] = xpos
-            input_centers[i][j][1] = ypos
+    xlen = len(xscale)
+    ylen = len(yscale)
+    input_centers = np.zeros((xlen * ylen, 2))
+    for i, xpos in enumerate(xscale):
+        for j, ypos in enumerate(yscale):
+            input_centers[i * ylen + j][0] = xpos
+            input_centers[i * ylen + j][1] = ypos
 
-    # project cell centers
-    transformer = Transformer.from_crs(grib_projection, config["Projections"]["out"])
-    input_centers[:, :, 0], input_centers[:, :, 1] = transformer.transform(
-        input_centers[:, :, 0], input_centers[:, :, 1]
+    transformer = Transformer.from_proj(
+        grib_projection, config["Projections"]["out"], always_xy=True
+    )
+    input_centers[:, 0], input_centers[:, 1] = transformer.transform(
+        input_centers[:, 0], input_centers[:, 1]
     )
 
-    # reshapes cell centers for interpolator
-    input_centers_flat = input_centers.reshape(
-        len(input_centers[:, 0]) * len(input_centers[0, :]), 2
-    )
+    # flat centers for interpolator
     centers_flat = cell_centers.reshape(rows * cols, 2)
 
     # loop over timesteps
@@ -618,11 +618,11 @@ def create_inmap_era5_grib(
             step = converter(step)
 
         # build interpolator
-        input_values_flat = step.data.reshape(len(input_centers_flat))
+        input_values_flat = step.data.reshape(len(input_centers))
         (step_rows, step_cols) = np.shape(step)
         assert step_rows == len(yscale), "length of rows doesn't match"
         assert step_cols == len(xscale), "length of columns doesn't match"
-        interp = NearestNDInterpolator(input_centers_flat, input_values_flat)
+        interp = NearestNDInterpolator(input_centers, input_values_flat)
 
         # create map
         interpolated = interp(centers_flat).reshape(rows, cols)
@@ -726,22 +726,22 @@ def create_inmap_era5_grib_steps(
     xscale = grib.coords["longitude"].data
     yscale = grib.coords["latitude"].data
 
-    input_centers = np.zeros((len(yscale), len(xscale), 2))
-    for i, ypos in enumerate(yscale):
-        for j, xpos in enumerate(xscale):
-            input_centers[i][j][0] = xpos
-            input_centers[i][j][1] = ypos
+    xlen = len(xscale)
+    ylen = len(yscale)
+    input_centers = np.zeros((xlen * ylen, 2))
+    for i, xpos in enumerate(xscale):
+        for j, ypos in enumerate(yscale):
+            input_centers[i * ylen + j][0] = xpos
+            input_centers[i * ylen + j][1] = ypos
 
-    # project cell centers
-    transformer = Transformer.from_crs(grib_projection, config["Projections"]["out"])
-    input_centers[:, :, 0], input_centers[:, :, 1] = transformer.transform(
-        input_centers[:, :, 0], input_centers[:, :, 1]
+    transformer = Transformer.from_proj(
+        grib_projection, config["Projections"]["out"], always_xy=True
+    )
+    input_centers[:, 0], input_centers[:, 1] = transformer.transform(
+        input_centers[:, 0], input_centers[:, 1]
     )
 
-    # reshapes cell centers for interpolator
-    input_centers_flat = input_centers.reshape(
-        len(input_centers[:, 0]) * len(input_centers[0, :]), 2
-    )
+    # flat centers for interpolator
     centers_flat = cell_centers.reshape(rows * cols, 2)
 
     # loop over timesteps
@@ -783,11 +783,11 @@ def create_inmap_era5_grib_steps(
                 step = converter(step)
 
             # build interpolator
-            input_values_flat = step.data.reshape(len(input_centers_flat))
+            input_values_flat = step.data.reshape(len(input_centers))
             (step_rows, step_cols) = np.shape(step)
             assert step_rows == len(yscale), "length of rows doesn't match"
             assert step_cols == len(xscale), "length of columns doesn't match"
-            interp = NearestNDInterpolator(input_centers_flat, input_values_flat)
+            interp = NearestNDInterpolator(input_centers, input_values_flat)
 
             # create map
             interpolated = interp(centers_flat).reshape(rows, cols)
