@@ -98,6 +98,7 @@ from argparse import ArgumentParser
 from logging import error, info, debug
 import logging
 from os.path import isfile
+from os.path import join as pjoin
 from configparser import ConfigParser, ExtendedInterpolation
 
 """Mapping from log level strings to logging levels"""
@@ -219,33 +220,16 @@ class wflowModel:
         return array
 
     def init_from_ini(self):
-        inifile = open(self.modelpath + "/" + self.inifile, "r")
+        config = ConfigParser()
+        config.read(pjoin(self.modelpath, self.inifile))
 
-        data = inifile.read()
-        data = data.split("\n")
-
-        for line in data:
-            if not line.startswith("#"):
-                if "starttime" in line:
-                    line = line.split("=")[1].strip()
-                    # get start time from ini file
-                    start = datetime.strptime(line, "%Y-%m-%d %H:%M:%S")
-                    # localize time
-                    start_localized = self.timezone.localize(start)
-                    # start time unix epoch
-                    self.starttime = start_localized.timestamp()
-                if "endtime" in line:
-                    line = line.split("=")[1].strip()
-                    # get end time from ini file
-                    end = datetime.strptime(line, "%Y-%m-%d %H:%M:%S")
-                    # localize time
-                    end_localized = self.timezone.localize(end)
-                    # end time unix epoch
-                    self.endtime = end_localized.timestamp()
-                if "timestepsecs" in line:
-                    self.timestepsecs = float(line.split("=")[1].strip())
-
-        inifile.close()
+        self.starttime = self.timezone.localize(
+            datetime.strptime(config["run"]["starttime"], "%Y-%m-%d %H:%M:%S")
+        ).timestamp()
+        self.endtime = self.timezone.localize(
+            datetime.strptime(config["run"]["endtime"], "%Y-%m-%d %H:%M:%S")
+        ).timestamp()
+        self.timestepsecs = float(config["run"]["timestepsecs"])
 
     def get_results(self, ID):
         # path to results
