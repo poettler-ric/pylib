@@ -107,12 +107,6 @@ print("Original cell centers initialized in " + str(time.time() - start_time) + 
 #                        NetCDF settings
 #######################################################################
 
-# General settings
-# rain = r'/media/iwbworkstation/Volume/Dissertation/3_Hydrology/0_Model_Data/4_Precepitation/ForcingOct04-05-06/RR'
-# temp = r'/media/iwbworkstation/Volume/Dissertation/3_Hydrology/0_Model_Data/4_Precepitation/ForcingOct04-05-06/TT'
-# rad = r'/media/iwbworkstation/Volume/Dissertation/3_Hydrology/0_Model_Data/4_Precepitation/Strahlung_Muerz'
-# resultfolder = r'/home/iwbworkstation/Desktop/working_dir/model_rerun_paper1/inmaps_Makkink_Europe'
-
 rain = r"/media/iwbworkstation/My Passport/Dissertation/3_Hydrology/0_Model_Data/4_Precepitation/Forcing040506/RR/RR"
 temp = r"/media/iwbworkstation/My Passport/Dissertation/3_Hydrology/0_Model_Data/4_Precepitation/Forcing040506/TT/TT"
 rad = r"/media/iwbworkstation/Volume/Dissertation/3_Hydrology/0_Model_Data/4_Precepitation/Strahlung_Muerz"
@@ -120,11 +114,6 @@ resultfolder = r"/home/iwbworkstation/Desktop/working_dir/model_rerun_paper1/NSG
 
 INCA_epsg = "epsg:31258"
 model_epsg = "epsg:32633"
-# minutes is accurate enough
-timestep = 15  # in min
-# averaging temperature
-tempaveraging = 1440  # in minutes
-# printouts for progress 'day' or 'month'
 
 #######################################################################
 
@@ -232,6 +221,7 @@ for subdir, dirs, files in os.walk(temp):
         # handle PET
         # datestring
         fullstring = file[-17:-7]
+        # FIXME: magic string
         path_rad = rad + "/" + "Muerz_GL_" + fullstring + "00_00.asc"
 
         rad_vals = np.genfromtxt(path_rad, skip_header=6)
