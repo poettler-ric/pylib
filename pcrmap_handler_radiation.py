@@ -184,8 +184,6 @@ print("Precipitation array generated in " + str(time.time() - start_time) + " s"
 # allocate temperature matrix
 temp_input = np.zeros((count, rows, cols), dtype="float32")
 
-julian_day = []
-
 pbar2 = tqdm(total=count)
 
 ## Temperature loop also calculate PET
@@ -195,9 +193,6 @@ for subdir, dirs, files in os.walk(temp):
     # metadata is used from precipitation
     for file in sorted(files):
         path = temp + "/" + file
-        # find julian day and convert to integer
-        j_day = int(file[-11:-9].lstrip("0"))
-        julian_day.append(j_day)
         # create and flatten temperature values
         values = np.genfromtxt(path, skip_header=6)
         values_flatt = values.reshape(len(centers[:, 0]) * len(centers[0, :]))
