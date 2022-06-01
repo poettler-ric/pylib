@@ -142,12 +142,6 @@ for subdir, dirs, files in os.walk(rain):
         # create file path
         path = rain + "/" + file
         if i == 0:
-            # start time metadata
-            startyear = file[-17:-13]
-            startmonth = file[-13:-11]
-            startday = file[-11:-9]
-            starthour = file[-9:-7]
-            startminute = file[-6:-4]
             # read INCA file in ESRII format, header only
             metadata = np.genfromtxt(path, max_rows=6, dtype=str)
             # compute cell centers in original projection
