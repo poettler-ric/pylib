@@ -209,9 +209,9 @@ for subdir, dirs, files in os.walk(temp):
 
         # handle PET
         # datestring
-        fullstring = file[-17:-7]
+        datepart = file.split("_")[2]
         # FIXME: magic string
-        path_rad = rad + "/" + "Muerz_GL_" + fullstring + "00_00.asc"
+        path_rad = rad + "/" + "Muerz_GL_" + datepart + "00_00.asc"
 
         rad_vals = np.genfromtxt(path_rad, skip_header=6)
 
