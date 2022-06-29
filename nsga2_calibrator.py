@@ -554,6 +554,7 @@ def main():
     gauge_root = config["Calibration"]["gauge_root"]
     # set timezone of gauge data !!careful timezones are inverted!!
     # so gmt -1 is actually gmt +1
+    # TODO: move to config file
     timezone_gauge = pytz.timezone("Etc/GMT-1")
     timezone_model = pytz.timezone("UTC")
 
