@@ -121,10 +121,10 @@ class Series2nc:
         self.metadata = set_metadata()
         # determine numer of rows and cols
         self.rows = int(
-            (self.boundingbox[1::2][1] - self.boundingbox[1::2][0]) / self.resolution
+            (self.boundingbox[3] - self.boundingbox[1]) / self.resolution
         )
         self.cols = int(
-            (self.boundingbox[0::2][1] - self.boundingbox[0::2][0]) / self.resolution
+            (self.boundingbox[2] - self.boundingbox[0]) / self.resolution
         )
         # set options for PET computation
         # Default PET option is blainy-griddle (if only) temperature and
