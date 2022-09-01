@@ -44,8 +44,6 @@ from scipy import interpolate
 
 # from tqdm.auto import tqdm
 
-tqdm._instances.clear()
-
 ############################################
 #               Functions
 ############################################
