@@ -26,38 +26,39 @@ import datetime
 # rain info as dictionary
 # naming has to include some kind of time stamp
 raindata = {
-    "root": r"/media/iwbworkstation/My Passport/Dissertation/3_Hydrology/Muerz/basedata/INCA_DATA/free_Data/netcdf_files/RR",
+    "root": r"/home/richi/master_thesis/tmp_weather/inca_data/RR",
     "projection": "epsg:31287",
     "naming": "Muerz_RR_%Y%m%d_%H%M.tif",
     "timestep_secs": "3600",
 }
 tempdata = {
-    "root": r"/media/iwbworkstation/My Passport/Dissertation/3_Hydrology/Muerz/basedata/INCA_DATA/free_Data/netcdf_files/TT",
+    "root": r"/home/richi/master_thesis/tmp_weather/inca_data/T2M",
     "projection": "epsg:31287",
     "naming": "Muerz_RR_%Y%m%d_%H%M.tif",
     "timestep_secs": "3600",
 }
 raddata = {
-    "root": r"/media/iwbworkstation/My Passport/Dissertation/3_Hydrology/Muerz/basedata/INCA_DATA/free_Data/netcdf_files/GL",
+    "root": r"/home/richi/master_thesis/tmp_weather/inca_data/GL",
     "projection": "epsg:31287",
     "naming": "Muerz_RR_%Y%m%d_%H%M.tif",
     "timestep_secs": "3600",
 }
 
 # resultfolder = r'/home/iwbworkstation/Desktop/working_dir/model_rerun_paper1/sbm_rerun/Stanzbach/inmaps_040506_GL_corr.nc'
-resultfolder = r"/home/iwbworkstation/Desktop/working_dir/model_rerun_paper1/sbm_rerun/Muerz/inmaps_openINCA_new_3years.nc"
+resultfolder = r"/home/richi/master_thesis/tmp_weather/GL_RR_T2M_20140101-20150228.nc"
 
 outproj = "epsg:32633"
 # as datetime object
-start_date = datetime.datetime.strptime("01.01.2015 00:00", "%d.%m.%Y %H:%M")
+start_date = datetime.datetime.strptime("01.01.2014 00:00", "%d.%m.%Y %H:%M")
 # as datetime object
 # end_date = datetime.datetime.strptime('31.08.2005 23:45', '%d.%m.%Y %H:%M')
 # end_date = datetime.datetime.strptime('31.12.2006 23:45', '%d.%m.%Y %H:%M')
-end_date = datetime.datetime.strptime("01.01.2018 00:00", "%d.%m.%Y %H:%M")
+end_date = datetime.datetime.strptime("28.02.2015 23:00", "%d.%m.%Y %H:%M")
 
 bounds = [497000.0, 5249000.0, 566200.0, 5295000.0]
+# resolution = 250.0
 resolution = 400.0
-time_step = 900.0
+time_step = 3600.0
 
 ## bounds
 # bounds = [528900.0,5249000.0,547100.0,5261000.0]

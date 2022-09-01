@@ -21,28 +21,30 @@ import re
 breakout = None
 
 # standard file format and desired years
-fileformat = "incal-hourly_%Y0511T0000_%Y0521T0000.nc"
-years = ["2015", "2016", "2017"]
+fileformat = "incal-hourly_%Y0101T0000_%Y0131T2300.nc"
+years = ["2014", "2015"]
 
-filepath = r"/media/iwbworkstation/My Passport/Dissertation/3_Hydrology/Muerz/basedata/INCA_DATA/free_Data/netcdf_files/INCA_2012-2017"
+filepath = (
+    r"/home/richi/master_thesis/tmp_weather/GL_RR_T2M_20140101-20150228"
+)
 
 # name in INCA File, Destination path,output format, scaling factor
 extract_variables = [
     [
         "RR",
-        "/media/iwbworkstation/My Passport/Dissertation/3_Hydrology/Muerz/basedata/INCA_DATA/free_Data/netcdf_files/RR",
+        "/home/richi/master_thesis/tmp_weather/inca_data/RR",
         "Muerz_RR_%Y%m%d_%H%M.tif",
         "0.001",
     ],
     [
         "T2M",
-        "/media/iwbworkstation/My Passport/Dissertation/3_Hydrology/Muerz/basedata/INCA_DATA/free_Data/netcdf_files/TT",
+        "/home/richi/master_thesis/tmp_weather/inca_data/T2M",
         "Muerz_TT_%Y%m%d_%H%M.tif",
         "0.01",
     ],
     [
         "GL",
-        "/media/iwbworkstation/My Passport/Dissertation/3_Hydrology/Muerz/basedata/INCA_DATA/free_Data/netcdf_files/GL",
+        "/home/richi/master_thesis/tmp_weather/inca_data/GL",
         "Muerz_GL_%Y%m%d_%H%M.tif",
         "0.01",
     ],
