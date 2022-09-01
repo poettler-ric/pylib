@@ -19,7 +19,7 @@
 ############################################
 
 # Import from model creator libary
-from ModelCreator.NETCDFhandler import Series2nc
+from masterthesis.NETCDFhandler import Series2nc
 
 import datetime
 
