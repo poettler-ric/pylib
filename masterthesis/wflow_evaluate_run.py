@@ -6,18 +6,11 @@ from datetime import datetime, timedelta
 from os.path import join as pjoin
 import numpy as np
 
+from display_tss import parse_tss
+
 
 def get_result(result_folder, column, start_time, time_step):
-    tss_file = pjoin(result_folder, "run.tss")
-    to_skip = None
-
-    # determine the lines to skip
-    with open(tss_file) as f:
-        f.readline()
-        to_skip = int(f.readline()) + 2
-
-    # read data
-    data = np.loadtxt(tss_file, skiprows=to_skip)
+    data = parse_tss(pjoin(result_folder, "run.tss"))
 
     # compute timestamps for data rows
     time_list = np.empty(data.shape[0])
