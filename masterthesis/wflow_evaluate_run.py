@@ -96,11 +96,9 @@ def main():
         args.start_time,
         args.end_time,
     )
-    print(results)
 
     gauge = get_gauge(args.gauge_file)
     gauge = select_evaluation_window(gauge, args.start_time, args.end_time)
-    print(gauge)
 
     nse = calc_nse(results[:, 1], gauge[:, 1])
     print(f"nse: {nse}")
