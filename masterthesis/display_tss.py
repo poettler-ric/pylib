@@ -47,7 +47,7 @@ def read_measured(filename, skip_lines):
 def main():
     """Main routine."""
 
-    parser = ArgumentParser(description="Prepare wflow files")
+    parser = ArgumentParser(description="Display wflow run results")
     parser.add_argument("config", help="configuration file destination")
     parser.add_argument("tss", help="tss file to display")
     args = parser.parse_args()
