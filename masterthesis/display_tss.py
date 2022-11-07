@@ -50,6 +50,7 @@ def main():
     parser = ArgumentParser(description="Display wflow run results")
     parser.add_argument("config", help="configuration file destination")
     parser.add_argument("tss", help="tss file to display")
+    parser.add_argument("--output", "-o", help="outputfile for the graph")
     args = parser.parse_args()
 
     config = ConfigParser()
@@ -82,7 +83,11 @@ def main():
             axes.plot(measured.loc[from_date:to_date].q_m3s, label=f"measured {name}")
 
     axes.legend()
-    plt.show()
+
+    if args.output:
+        plt.savefig(args.output)
+    else:
+        plt.show()
 
 
 if __name__ == "__main__":
