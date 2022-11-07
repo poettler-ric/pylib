@@ -65,6 +65,9 @@ def main():
     model_data = parse_tss(args.tss_file)
     axes = plt.subplot()
 
+    if config["DEFAULT"]["y_max"]:
+        plt.ylim(top=config.getint("DEFAULT", "y_max"))
+
     for key, key_config in config.items():
         if key.startswith("level."):
             name = key[len("level.") :]
