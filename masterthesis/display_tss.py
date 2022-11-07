@@ -48,12 +48,12 @@ def main():
     """Main routine."""
 
     parser = ArgumentParser(description="Prepare wflow files")
-    parser.add_argument("config_file", help="configuration file destination")
-    parser.add_argument("tss_file", help="tss file to display")
+    parser.add_argument("config", help="configuration file destination")
+    parser.add_argument("tss", help="tss file to display")
     args = parser.parse_args()
 
     config = ConfigParser()
-    config.read(args.config_file)
+    config.read(args.config)
 
     from_date = datetime.strptime(
         config["DEFAULT"]["from_date"], "%Y-%m-%dT%H:%M:%S"
@@ -62,7 +62,7 @@ def main():
         config["DEFAULT"]["to_date"], "%Y-%m-%dT%H:%M:%S"
     ).strftime("%Y-%m-%d %H:%M:%S")
 
-    model_data = parse_tss(args.tss_file)
+    model_data = parse_tss(args.tss)
     axes = plt.subplot()
 
     if config["DEFAULT"]["y_max"]:
