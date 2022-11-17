@@ -45,7 +45,7 @@ raddata = {
 }
 
 # resultfolder = r'/home/iwbworkstation/Desktop/working_dir/model_rerun_paper1/sbm_rerun/Stanzbach/inmaps_040506_GL_corr.nc'
-resultfolder = r"/mnt/GL_RR_T2M_20130101-20171231.nc"
+resultfolder = r"/home/richi/mnt/GL_RR_T2M_20130101-20171231.nc"
 
 outproj = "epsg:32633"
 # as datetime object
