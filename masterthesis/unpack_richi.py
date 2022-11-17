@@ -8,9 +8,9 @@ Created on Tue Jul 19 13:02:48 2022
 
 from osgeo import gdal
 from os.path import join as pjoin
+import multiprocessing as mp
 import netCDF4 as nc
 import os
-import multiprocessing as mp
 
 
 class Variable:
@@ -53,17 +53,13 @@ def unpack_file(net_path, i, var, time_array):
     # get respective raster band
     band = ds.GetRasterBand(i + 1)
     # retrive data
-    data = band.ReadAsArray(0, 0, ds.RasterXSize, ds.RasterYSize).astype(
-        float
-    )
+    data = band.ReadAsArray(0, 0, ds.RasterXSize, ds.RasterYSize).astype(float)
     # scale parameters
     data = data * var.factor
 
     # create empty GTIFF
     # build filepath
-    tif_path = pjoin(
-        var.tiff_path, time_array[i].strftime(var.tiff_filename_pattern)
-    )
+    tif_path = pjoin(var.tiff_path, time_array[i].strftime(var.tiff_filename_pattern))
     # create driver
     driver = gdal.GetDriverByName("GTiff")
     # create ds out
@@ -78,6 +74,7 @@ def unpack_file(net_path, i, var, time_array):
 
     # write data to raster
     ds_out.GetRasterBand(1).WriteArray(data)
+
 
 def get_time_array(net_path):
     ds = nc.Dataset(net_path)
@@ -95,7 +92,11 @@ def main():
 
                     # time loop
                     for i in range(0, len(time_array)):
-                        results.append(pool.apply_async(unpack_file, (net_path, i, var, time_array)))
+                        results.append(
+                            pool.apply_async(
+                                unpack_file, (net_path, i, var, time_array)
+                            )
+                        )
 
                     [result.wait() for result in results]
 
