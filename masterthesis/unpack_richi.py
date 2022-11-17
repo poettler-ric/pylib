@@ -7,6 +7,7 @@ Created on Tue Jul 19 13:02:48 2022
 """
 
 from osgeo import gdal
+from os.path import exists
 from os.path import join as pjoin
 import multiprocessing as mp
 import netCDF4 as nc
@@ -49,6 +50,11 @@ extract_variables = [
 
 
 def unpack_file(net_path, i, var, time_array):
+    # build filepath
+    tif_path = pjoin(var.tiff_path, time_array[i].strftime(var.tiff_filename_pattern))
+    if exists(tif_path):
+        return
+
     ds = gdal.Open(f"NETCDF:{net_path}:{var.name}")
     # get respective raster band
     band = ds.GetRasterBand(i + 1)
@@ -58,8 +64,6 @@ def unpack_file(net_path, i, var, time_array):
     data = data * var.factor
 
     # create empty GTIFF
-    # build filepath
-    tif_path = pjoin(var.tiff_path, time_array[i].strftime(var.tiff_filename_pattern))
     # create driver
     driver = gdal.GetDriverByName("GTiff")
     # create ds out
