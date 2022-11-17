@@ -26,19 +26,19 @@ import datetime
 # rain info as dictionary
 # naming has to include some kind of time stamp
 raindata = {
-    "root": r"/home/mnt/tiff_tmp/RR",
+    "root": r"/home/richi/mnt/tiff_tmp/RR",
     "projection": "epsg:31287",
     "naming": "Austria_RR_%Y%m%d_%H%M.tif",
     "timestep_secs": "3600",
 }
 tempdata = {
-    "root": r"/home/mnt/tiff_tmp/T2M",
+    "root": r"/home/richi/mnt/tiff_tmp/T2M",
     "projection": "epsg:31287",
     "naming": "Austria_TT_%Y%m%d_%H%M.tif",
     "timestep_secs": "3600",
 }
 raddata = {
-    "root": r"/home/mnt/tiff_tmp/GL",
+    "root": r"/home/richi/mnt/tiff_tmp/GL",
     "projection": "epsg:31287",
     "naming": "Austria_GL_%Y%m%d_%H%M.tif",
     "timestep_secs": "3600",

@@ -25,22 +25,22 @@ class Variable:
 extract_variables = [
     Variable(
         "RR",
-        "/home/mnt/zamg_inca/RR",
-        "/home/mnt/tiff_tmp/RR",
+        "/home/richi/mnt/zamg_inca/RR",
+        "/home/richi/mnt/tiff_tmp/RR",
         "Austria_RR_%Y%m%d_%H%M.tif",
         0.001,
     ),
     Variable(
         "T2M",
-        "/home/mnt/zamg_inca/T2M",
-        "/home/mnt/tiff_tmp/T2M",
+        "/home/richi/mnt/zamg_inca/T2M",
+        "/home/richi/mnt/tiff_tmp/T2M",
         "Austria_TT_%Y%m%d_%H%M.tif",
         0.01,
     ),
     Variable(
         "GL",
-        "/home/mnt/zamg_inca/GL",
-        "/home/mnt/tiff_tmp/GL",
+        "/home/richi/mnt/zamg_inca/GL",
+        "/home/richi/mnt/tiff_tmp/GL",
         "Austria_GL_%Y%m%d_%H%M.tif",
         0.01,
     ),
