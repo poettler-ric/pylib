@@ -26,34 +26,34 @@ import datetime
 # rain info as dictionary
 # naming has to include some kind of time stamp
 raindata = {
-    "root": r"/home/richi/master_thesis/tmp_weather/inca_data/RR",
+    "root": r"/home/mnt/tiff_tmp/RR",
     "projection": "epsg:31287",
-    "naming": "Muerz_RR_%Y%m%d_%H%M.tif",
+    "naming": "Austria_RR_%Y%m%d_%H%M.tif",
     "timestep_secs": "3600",
 }
 tempdata = {
-    "root": r"/home/richi/master_thesis/tmp_weather/inca_data/T2M",
+    "root": r"/home/mnt/tiff_tmp/T2M",
     "projection": "epsg:31287",
-    "naming": "Muerz_RR_%Y%m%d_%H%M.tif",
+    "naming": "Austria_TT_%Y%m%d_%H%M.tif",
     "timestep_secs": "3600",
 }
 raddata = {
-    "root": r"/home/richi/master_thesis/tmp_weather/inca_data/GL",
+    "root": r"/home/mnt/tiff_tmp/GL",
     "projection": "epsg:31287",
-    "naming": "Muerz_RR_%Y%m%d_%H%M.tif",
+    "naming": "Austria_GL_%Y%m%d_%H%M.tif",
     "timestep_secs": "3600",
 }
 
 # resultfolder = r'/home/iwbworkstation/Desktop/working_dir/model_rerun_paper1/sbm_rerun/Stanzbach/inmaps_040506_GL_corr.nc'
-resultfolder = r"/home/richi/master_thesis/tmp_weather/GL_RR_T2M_20140101-20150228.nc"
+resultfolder = r"/mnt/GL_RR_T2M_20130101-20171231.nc"
 
 outproj = "epsg:32633"
 # as datetime object
-start_date = datetime.datetime.strptime("01.01.2014 00:00", "%d.%m.%Y %H:%M")
+start_date = datetime.datetime.strptime("01.01.2013 00:00", "%d.%m.%Y %H:%M")
 # as datetime object
 # end_date = datetime.datetime.strptime('31.08.2005 23:45', '%d.%m.%Y %H:%M')
 # end_date = datetime.datetime.strptime('31.12.2006 23:45', '%d.%m.%Y %H:%M')
-end_date = datetime.datetime.strptime("28.02.2015 23:00", "%d.%m.%Y %H:%M")
+end_date = datetime.datetime.strptime("31.12.2017 23:00", "%d.%m.%Y %H:%M")
 
 bounds = [497000.0, 5249000.0, 566200.0, 5295000.0]
 # resolution = 250.0

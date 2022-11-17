@@ -25,23 +25,23 @@ class Variable:
 extract_variables = [
     Variable(
         "RR",
-        "/data/home/richi/data/weather/austria/muerz/inca_data/RR",
-        "/data/home/richi/tmp/inca_data/RR",
-        "Muerz_RR_%Y%m%d_%H%M.tif",
+        "/home/mnt/zamg_inca/RR",
+        "/home/mnt/tiff_tmp/RR",
+        "Austria_RR_%Y%m%d_%H%M.tif",
         0.001,
     ),
     Variable(
         "T2M",
-        "/data/home/richi/data/weather/austria/muerz/inca_data/T2M",
-        "/data/home/richi/tmp/inca_data/T2M",
-        "Muerz_TT_%Y%m%d_%H%M.tif",
+        "/home/mnt/zamg_inca/T2M",
+        "/home/mnt/tiff_tmp/T2M",
+        "Austria_TT_%Y%m%d_%H%M.tif",
         0.01,
     ),
     Variable(
         "GL",
-        "/data/home/richi/data/weather/austria/muerz/inca_data/GL",
-        "/data/home/richi/tmp/inca_data/GL",
-        "Muerz_GL_%Y%m%d_%H%M.tif",
+        "/home/mnt/zamg_inca/GL",
+        "/home/mnt/tiff_tmp/GL",
+        "Austria_GL_%Y%m%d_%H%M.tif",
         0.01,
     ),
 ]
