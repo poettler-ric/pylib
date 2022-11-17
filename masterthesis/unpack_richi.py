@@ -10,6 +10,7 @@ from osgeo import gdal
 from os.path import join as pjoin
 import netCDF4 as nc
 import os
+import multiprocessing as mp
 
 
 class Variable:
@@ -46,46 +47,58 @@ extract_variables = [
     ),
 ]
 
-for var in extract_variables:
-    for root, dirs, files in os.walk(var.nc_path):
-        for f in sorted(files):
-            net_path = pjoin(root, f)
-            ds = nc.Dataset(net_path)
-            time = ds["time"][:]
-            time_array = nc.num2date(ds["time"][:], ds["time"].units)
 
-            ds = None
-            # time loop
-            for i in range(0, len(time_array)):
-                ds = gdal.Open(f"NETCDF:{net_path}:{var.name}")
-                # get respective raster band
-                band = ds.GetRasterBand(i + 1)
-                # retrive data
-                data = band.ReadAsArray(0, 0, ds.RasterXSize, ds.RasterYSize).astype(
-                    float
-                )
-                # scale parameters
-                data = data * var.factor
+def unpack_file(net_path, i, var, time_array):
+    ds = gdal.Open(f"NETCDF:{net_path}:{var.name}")
+    # get respective raster band
+    band = ds.GetRasterBand(i + 1)
+    # retrive data
+    data = band.ReadAsArray(0, 0, ds.RasterXSize, ds.RasterYSize).astype(
+        float
+    )
+    # scale parameters
+    data = data * var.factor
 
-                # create empty GTIFF
-                # build filepath
-                tif_path = pjoin(
-                    var.tiff_path, time_array[i].strftime(var.tiff_filename_pattern)
-                )
-                # create driver
-                driver = gdal.GetDriverByName("GTiff")
-                # create ds out
-                ds_out = driver.Create(
-                    tif_path, ds.RasterXSize, ds.RasterYSize, 1, gdal.GDT_Float32
-                )
-                # get and set geotransform and projection
-                geotrans = ds.GetGeoTransform()
-                proj = ds.GetProjection()
-                ds_out.SetGeoTransform(geotrans)
-                ds_out.SetProjection(proj)
+    # create empty GTIFF
+    # build filepath
+    tif_path = pjoin(
+        var.tiff_path, time_array[i].strftime(var.tiff_filename_pattern)
+    )
+    # create driver
+    driver = gdal.GetDriverByName("GTiff")
+    # create ds out
+    ds_out = driver.Create(
+        tif_path, ds.RasterXSize, ds.RasterYSize, 1, gdal.GDT_Float32
+    )
+    # get and set geotransform and projection
+    geotrans = ds.GetGeoTransform()
+    proj = ds.GetProjection()
+    ds_out.SetGeoTransform(geotrans)
+    ds_out.SetProjection(proj)
 
-                # write data to raster
-                ds_out.GetRasterBand(1).WriteArray(data)
+    # write data to raster
+    ds_out.GetRasterBand(1).WriteArray(data)
 
-                ds = None
-                ds_out = None
+def get_time_array(net_path):
+    ds = nc.Dataset(net_path)
+    return nc.num2date(ds["time"][:], ds["time"].units)
+
+
+def main():
+    with mp.Pool(mp.cpu_count()) as pool:
+        for var in extract_variables:
+            for root, _, files in os.walk(var.nc_path):
+                for f in sorted(files):
+                    net_path = pjoin(root, f)
+                    time_array = get_time_array(net_path)
+                    results = []
+
+                    # time loop
+                    for i in range(0, len(time_array)):
+                        results.append(pool.apply_async(unpack_file, (net_path, i, var, time_array)))
+
+                    [result.wait() for result in results]
+
+
+if __name__ == "__main__":
+    main()
