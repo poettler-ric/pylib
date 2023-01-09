@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from os.path import join as pjoin
 import numpy as np
 
-from display_tss import parse_tss
+from masterthesis.display_tss import parse_tss
 
 
 def get_result(result_folder, column, start_time, time_step):
