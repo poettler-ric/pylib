@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # -*- coding: utf-8 -*-
 """
 Created on Tue Jan 24 11:07:09 2023
@@ -5,25 +7,37 @@ Created on Tue Jan 24 11:07:09 2023
 @author: gegese
 """
 
-import requests
+from argparse import ArgumentParser
+from os.path import join as pjoin
+from requests import get as rget
+
+
+def try_download(url, out_file):
+    r = rget(url, allow_redirects=True)
+    if len(r.content) > 0:
+        with open(out_file, "wb") as f:
+            f.write(r.content)
 
 
 def brute_downloader(basepath):
     for i in range(200_000, 400_000):
-        r = requests.get(
-            r"https://ehyd.gv.at/eHYD/MessstellenExtraData/owf?id=%s&file=1" % i,
-            allow_redirects=True,
+        try_download(
+            f"https://ehyd.gv.at/eHYD/MessstellenExtraData/owf?id={i}&file=1",
+            pjoin(basepath, f"{i}_meta.csv"),
         )
-        r2 = requests.get(
-            r"https://ehyd.gv.at/eHYD/MessstellenExtraData/owf?id=%s&file=4" % i,
-            allow_redirects=True,
+        try_download(
+            f"https://ehyd.gv.at/eHYD/MessstellenExtraData/owf?id={i}&file=4",
+            pjoin(basepath, f"{i}_runoff.csv"),
         )
 
-        if len(r.content) > 0.0:
-            open(basepath + "/%s_meta.csv" % i, "wb").write(r.content)
-            open(basepath + "/%s_runoff.csv" % i, "wb").write(r2.content)
+
+def main():
+    parser = ArgumentParser()
+    parser.add_argument("basepath", help="basepath to safe the files to")
+    args = parser.parse_args()
+
+    brute_downloader(args.basepath)
 
 
-basepath = r"C:\Projects\DataMining\ZAMG_API\Gauges"
-
-brute_downloader(basepath)
+if __name__ == "__main__":
+    main()
