@@ -41,10 +41,6 @@ def determine_start_id(basepath, initial_start):
 
 
 def brute_downloader(basepath):
-        try_download(
-            f"https://ehyd.gv.at/eHYD/MessstellenExtraData/owf?id={i}&file=1",
-            pjoin(basepath, f"{i}_meta.csv"),
-        )
     start_id = determine_start_id(basepath, 200_000)
     info(f"starting at id {start_id}")
     end_id = 400_000
