@@ -186,8 +186,7 @@ def main():
                         "elevation": meta["elevation"],
                     },
                 }
-                if meta["area"] > 20.0:
-                    pointShp.write(rowDict)
+                pointShp.write(rowDict)
 
     pointShp.close()
 
