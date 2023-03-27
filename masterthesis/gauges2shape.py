@@ -7,6 +7,7 @@ Created on Thu Feb  9 14:01:17 2023
 @author: gegese
 """
 
+from argparse import ArgumentParser
 import fiona
 import pyproj
 import os
@@ -100,6 +101,10 @@ def get_metadata(text, coordrefs):
 
 
 def main():
+    parser = ArgumentParser()
+    parser.add_argument("directory", help="location of the metadata files")
+    parser.add_argument("shapefile", help="location of the resulting shape file")
+    args = parser.parse_args()
 
     # reference systems
     coordrefs = {
@@ -116,9 +121,6 @@ def main():
         "Magistratsabteilung 31": "+proj=tmerc +lat_0=0 +lon_0=16.3333333333333 +k=1 +x_0=750000 +y_0=-5000000 +ellps=bessel +towgs84=577.326,90.129,463.919,5.137,1.474,5.297,2.4232 +units=m +no_defs",
     }
 
-    # directory
-    directory = r"C:\Projects\DataMining\ZAMG_API\Gauges"
-
     # target crs
     target_crs = "+proj=lcc +lat_0=47.5 +lon_0=13.3333333333333 +lat_1=49 +lat_2=46 +x_0=400000 +y_0=400000 +ellps=bessel +towgs84=577.326,90.129,463.919,5.137,1.474,5.297,2.4232 +units=m +no_defs"
     # shape settings
@@ -133,7 +135,7 @@ def main():
         ],
     }
     pointShp = fiona.open(
-        r"C:\Projects\Austria_Model\Data\gauges\gauges_austria.shp",
+        args.shapefile,
         mode="w",
         driver="ESRI Shapefile",
         schema=schema,
@@ -141,14 +143,14 @@ def main():
     )
 
     # Main loop
-    for file in os.listdir(directory):
+    for file in os.listdir(args.directory):
         filename = os.fsdecode(file)
 
         print(filename)
 
         if "runoff" in filename:
             # construct path
-            path = directory + "/" + filename
+            path = args.directory + "/" + filename
             # open file
             f = open(path, "r")
             text = f.read().splitlines()
