@@ -122,6 +122,7 @@ def main():
     }
 
     # target crs
+    # austria lambert
     target_crs = "+proj=lcc +lat_0=47.5 +lon_0=13.3333333333333 +lat_1=49 +lat_2=46 +x_0=400000 +y_0=400000 +ellps=bessel +towgs84=577.326,90.129,463.919,5.137,1.474,5.297,2.4232 +units=m +no_defs"
     # shape settings
     schema = {
@@ -160,6 +161,7 @@ def main():
             source_crs = coordrefs[meta["state"]]
 
             # special case for east tirol
+            # projections for via donau
             if meta["state"] == "HD-Tirol" and meta["x"] > 275000:
                 source_crs = "+proj=tmerc +lat_0=0 +lon_0=13.3333333333333 +k=1 +x_0=450000 +y_0=-5000000 +ellps=bessel +towgs84=577.326,90.129,463.919,5.137,1.474,5.297,2.4232 +units=m +no_defs"
 
