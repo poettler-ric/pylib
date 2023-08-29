@@ -116,8 +116,9 @@ def main():
     c = cdsapi.Client()
     info(f"Starting download ({args.variable} for {args.year})")
     c.retrieve(
-        "reanalysis-era5-land",
+        "reanalysis-era5-single-levels",
         {
+            "product_type": "reanalysis",
             "format": "grib",
             "variable": args.variable,
             "year": args.year,
