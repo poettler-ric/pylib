@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 
+import logging
 from argparse import ArgumentParser
 from logging import info
 from os.path import join as pjoin
-import logging
 
 import cdsapi
-
 
 ALL_MONTHS = [
     "01",
