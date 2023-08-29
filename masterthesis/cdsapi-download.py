@@ -87,7 +87,12 @@ AUSTRIA = [
     46,
     19,
 ]
-VALID_VARIABLES = ["2m_temperature", "potential_evaporation", "total_precipitation"]
+VALID_VARIABLES = [
+    "2m_temperature",
+    "potential_evaporation",
+    "total_precipitation",
+    "surface_solar_radiation_downwards",
+]
 
 
 def main():
