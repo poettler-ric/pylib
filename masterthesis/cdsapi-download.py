@@ -114,7 +114,7 @@ def main():
     filename = pjoin(args.output_folder, f"{args.variable}_{args.year}.grib")
 
     c = cdsapi.Client()
-    info("Starting download")
+    info(f"Starting download ({args.variable} for {args.year})")
     c.retrieve(
         "reanalysis-era5-land",
         {
