@@ -95,6 +95,8 @@ VALID_VARIABLES = [
 
 
 def main():
+    """Main routine"""
+
     parser = ArgumentParser(description="Downloads ERA5 grib files")
     parser.add_argument(
         "variable", choices=VALID_VARIABLES, help="variable to download"
@@ -112,9 +114,9 @@ def main():
 
     filename = pjoin(args.output_folder, f"{args.variable}_{args.year}.grib")
 
-    c = cdsapi.Client()
+    client = cdsapi.Client()
     info(f"Starting download ({args.variable} for {args.year})")
-    c.retrieve(
+    client.retrieve(
         "reanalysis-era5-single-levels",
         {
             "product_type": "reanalysis",
