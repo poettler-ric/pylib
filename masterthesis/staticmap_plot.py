@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import extract_post_gauges
 import matplotlib.colors as colors
 import matplotlib.figure as figure
 import matplotlib.patches as mpatches
@@ -7,8 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
 import numpy.typing as typing
-
-import extract_post_gauges
 
 CATCHMENT_FILE = (
     "/data/home/richi/master_thesis/model_MAR/staticmaps/wflow_subcatch.map"
@@ -27,8 +26,8 @@ RIVER_PGF = "/data/home/richi/master_thesis/thesis/images/wflow_river.pgf"
 STREAMORDER_PGF = "/data/home/richi/master_thesis/thesis/images/wflow_streamorder.pgf"
 LDD_PGF = "/data/home/richi/master_thesis/thesis/images/wflow_ldd.pgf"
 LANDUSE_PGF = "/data/home/richi/master_thesis/thesis/images/wflow_landuse.pgf"
-LANDUSE_LEVEL_3_PGF = (
-    "/data/home/richi/master_thesis/thesis/images/wflow_landuse_level_3.pgf"
+LANDUSE_LEVEL_1_PGF = (
+    "/data/home/richi/master_thesis/thesis/images/wflow_landuse_level_1.pgf"
 )
 
 WIDTH_IN = extract_post_gauges.TEXTWITH_IN
@@ -262,7 +261,7 @@ def writeLdd(catchment_file: str, ldd_file: str, outfile: str) -> None:
 
 
 def writeLandUse(
-    catchment_file: str, landuse_file: str, outfile: str, outfile_level_3: str = ""
+    catchment_file: str, landuse_file: str, outfile: str, outfile_level_1: str = ""
 ) -> None:
     landuse = ma.masked_array(
         extract_post_gauges.getRaster(landuse_file, -1),
@@ -279,19 +278,19 @@ def writeLandUse(
     savefig(fig, outfile)
     plt.close(fig)
 
-    if outfile_level_3:
-        level3 = landuse // 100
-        level3_colors = {
+    if outfile_level_1:
+        level1 = landuse // 100
+        level1_colors = {
             1: "black",
             2: "yellow",
             3: "green",
             4: "mediumaquamarine",
             5: "blue",
         }
-        used_ids = np.unique(level3.compressed())
-        level3_map = colors.ListedColormap([level3_colors[i] for i in used_ids])
+        used_ids = np.unique(level1.compressed())
+        level1_map = colors.ListedColormap([level1_colors[i] for i in used_ids])
         patches = [
-            mpatches.Patch(color=level3_colors[i], label=LANDUSE_CODES[i]["name"])
+            mpatches.Patch(color=level1_colors[i], label=LANDUSE_CODES[i]["name"])
             for i in used_ids
         ]
 
@@ -299,10 +298,10 @@ def writeLandUse(
         fig.set_size_inches(w=WIDTH_IN, h=HEIGHT_IN)
         ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
 
-        ax.imshow(level3, cmap=level3_map, interpolation="none")
+        ax.imshow(level1, cmap=level1_map, interpolation="none")
         fig.legend(handles=patches, loc="lower left")
 
-        savefig(fig, outfile_level_3)
+        savefig(fig, outfile_level_1)
         plt.close(fig)
 
 
@@ -319,7 +318,7 @@ def main() -> None:
     writeRiverAndGauges(DEM_FILE, CATCHMENT_FILE, RIVER_FILE, GAUGE_FILE, RIVER_PGF)
     writeStreamOrder(CATCHMENT_FILE, STREAMORDER_FILE, STREAMORDER_PGF)
     writeLdd(CATCHMENT_FILE, LDD_FILE, LDD_PGF)
-    writeLandUse(CATCHMENT_FILE, LANDUSE_FILE, LANDUSE_PGF, LANDUSE_LEVEL_3_PGF)
+    writeLandUse(CATCHMENT_FILE, LANDUSE_FILE, LANDUSE_PGF, LANDUSE_LEVEL_1_PGF)
 
 
 if __name__ == "__main__":
