@@ -400,6 +400,34 @@ def export_pgf(df, folder):
         fig.savefig(path.join(folder, f"{name}.pgf"), backend="pgf")
         plt.close(fig)
 
+    fig, axs = plt.subplots()
+    fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
+    plt.xlabel("Date")
+    axs.set_xlim(left=df["date"].iloc[0], right=OFFICIAL_END_DATE)
+    plt.xticks(rotation=45, ha="right")
+    plt.ylabel("Precipitation Sum [\\si{\\milli\\meter\\per\\hour}]")
+    axs.plot(df["date"], df["inca_precipitation_sum"], label="INCA")
+    axs.plot(df["date"], df["era5_precipitation_sum"], label="ERA5")
+    axs.grid()
+    axs.legend()
+    fig.tight_layout()
+    fig.savefig(path.join(folder, "precipitation_sum.pgf"), backend="pgf")
+    plt.close(fig)
+
+    fig, axs = plt.subplots()
+    fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
+    plt.xlabel("Date")
+    axs.set_xlim(left=df["date"].iloc[0], right=OFFICIAL_END_DATE)
+    plt.xticks(rotation=45, ha="right")
+    plt.ylabel("Average Temperature [\\si{\\degreeCelsius}]")
+    axs.plot(df["date"], df["inca_temperature_average"], label="INCA")
+    axs.plot(df["date"], df["era5_temperature_average"], label="ERA5")
+    axs.grid()
+    axs.legend()
+    fig.tight_layout()
+    fig.savefig(path.join(folder, "temperature_average.pgf"), backend="pgf")
+    plt.close(fig)
+
 
 def print_stats(df):
     for name in get_calibration_column_names(df):
@@ -407,6 +435,18 @@ def print_stats(df):
         print(f"NSE = {nse(df['measured'], df[name])}")
         print(f"NCE = {nce(df['measured'], df[name])}")
         print(f"KGE = {kge(df['measured'], df[name])}")
+
+    precipitation_sum = df[["inca_precipitation_sum", "era5_precipitation_sum"]]
+    precipitation_sum_corr = precipitation_sum.corr().loc[
+        "inca_precipitation_sum", "era5_precipitation_sum"
+    ]
+    print(f"correlation precipitation sum: {precipitation_sum_corr}")
+
+    temperature_average = df[["inca_temperature_average", "era5_temperature_average"]]
+    temperature_average_corr = temperature_average.corr().loc[
+        "inca_temperature_average", "era5_temperature_average"
+    ]
+    print(f"correlation temperature average: {temperature_average_corr}")
 
 
 def main():
