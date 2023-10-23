@@ -280,7 +280,7 @@ def compute_data_frame():
     timestep = 3600
 
     res_path = r"/data/home/richi/master_thesis/model_MAR/results_INCA/run.tss"
-    res_path2 = r"/data/home/richi/master_thesis/model_MAR/results_ERA5/run.tss"
+    res_path2 = r"/data/home/richi/master_thesis/model_MAR/results_ERA5_NSE/run.tss"
     res_path3 = r"/data/home/richi/master_thesis/model_MAR/results_ERA5_KGE/run.tss"
 
     # read INCA simulation
@@ -308,7 +308,7 @@ def compute_data_frame():
         "/data/home/richi/master_thesis/model_MAR/results_INCA/outmaps"
     )
     era5_stats = stat_outmaps(
-        "/data/home/richi/master_thesis/model_MAR/results_ERA5/outmaps"
+        "/data/home/richi/master_thesis/model_MAR/results_ERA5_NSE/outmaps"
     )
 
     return pd.DataFrame(
