@@ -24,6 +24,8 @@ SIMULATION_START_DATE = datetime.datetime(2013, 1, 1, 0, 0)
 CALIBRATION_START_DATE = datetime.datetime(2014, 1, 1, 0, 0)
 OFFICIAL_END_DATE = datetime.datetime(2018, 1, 1, 0, 0)
 
+LINE_WIDTH = 1.0
+
 
 def nse(measured, simulated) -> float:
     return (
@@ -342,8 +344,12 @@ def plot_df(df):
     column_names = get_calibration_column_names(df)
     fig, axs = plt.subplots(len(column_names))
     for index, name in enumerate(column_names):
-        axs[index].plot(df["date"], df["measured"], "k--", label="measured")
-        axs[index].plot(df["date"], df[name], "b", label="simulated")
+        axs[index].plot(
+            df["date"], df["measured"], "k--", linewidth=LINE_WIDTH, label="measured"
+        )
+        axs[index].plot(
+            df["date"], df[name], "b", linewidth=LINE_WIDTH, label="simulated"
+        )
         axs[index].grid()
         axs[index].legend()
     plt.show()
@@ -353,18 +359,54 @@ def plot_df(df):
 def plotWeather(df):
     fig, axs = plt.subplots(3)
     axs[0].set_title("Precipitation Sum")
-    axs[0].plot(df["date"], df["inca_precipitation_sum"], "k--", label="inca")
-    axs[0].plot(df["date"], df["era5_precipitation_sum"], "b", label="era5")
+    axs[0].plot(
+        df["date"],
+        df["inca_precipitation_sum"],
+        "k--",
+        linewidth=LINE_WIDTH,
+        label="inca",
+    )
+    axs[0].plot(
+        df["date"],
+        df["era5_precipitation_sum"],
+        "b",
+        linewidth=LINE_WIDTH,
+        label="era5",
+    )
     axs[0].grid()
     axs[0].legend()
     axs[1].set_title("Temperature Average")
-    axs[1].plot(df["date"], df["inca_temperature_average"], "k--", label="inca")
-    axs[1].plot(df["date"], df["era5_temperature_average"], "b", label="era5")
+    axs[1].plot(
+        df["date"],
+        df["inca_temperature_average"],
+        "k--",
+        linewidth=LINE_WIDTH,
+        label="inca",
+    )
+    axs[1].plot(
+        df["date"],
+        df["era5_temperature_average"],
+        "b",
+        linewidth=LINE_WIDTH,
+        label="era5",
+    )
     axs[1].grid()
     axs[1].legend()
     axs[2].set_title("Evaporation Average")
-    axs[2].plot(df["date"], df["inca_evaporation_average"], "k--", label="inca")
-    axs[2].plot(df["date"], df["era5_evaporation_average"], "b", label="era5")
+    axs[2].plot(
+        df["date"],
+        df["inca_evaporation_average"],
+        "k--",
+        linewidth=LINE_WIDTH,
+        label="inca",
+    )
+    axs[2].plot(
+        df["date"],
+        df["era5_evaporation_average"],
+        "b",
+        linewidth=LINE_WIDTH,
+        label="era5",
+    )
     axs[2].grid()
     axs[2].legend()
     plt.show()
@@ -392,8 +434,8 @@ def export_pgf(df, folder):
         axs.set_xlim(left=df["date"].iloc[0], right=OFFICIAL_END_DATE)
         plt.xticks(rotation=45, ha="right")
         plt.ylabel("Discharge [\\si{\\cubic\\meter\\per\\second}]")
-        axs.plot(df["date"], df["measured"], label="Measured")
-        axs.plot(df["date"], df[name], label="Simulated")
+        axs.plot(df["date"], df["measured"], linewidth=LINE_WIDTH, label="Measured")
+        axs.plot(df["date"], df[name], linewidth=LINE_WIDTH, label="Simulated")
         axs.grid()
         axs.legend()
         fig.tight_layout()
@@ -406,8 +448,12 @@ def export_pgf(df, folder):
     axs.set_xlim(left=df["date"].iloc[0], right=OFFICIAL_END_DATE)
     plt.xticks(rotation=45, ha="right")
     plt.ylabel("Precipitation Sum [\\si{\\milli\\meter\\per\\hour}]")
-    axs.plot(df["date"], df["inca_precipitation_sum"], label="INCA")
-    axs.plot(df["date"], df["era5_precipitation_sum"], label="ERA5")
+    axs.plot(
+        df["date"], df["inca_precipitation_sum"], linewidth=LINE_WIDTH, label="INCA"
+    )
+    axs.plot(
+        df["date"], df["era5_precipitation_sum"], linewidth=LINE_WIDTH, label="ERA5"
+    )
     axs.grid()
     axs.legend()
     fig.tight_layout()
@@ -420,8 +466,12 @@ def export_pgf(df, folder):
     axs.set_xlim(left=df["date"].iloc[0], right=OFFICIAL_END_DATE)
     plt.xticks(rotation=45, ha="right")
     plt.ylabel("Average Temperature [\\si{\\degreeCelsius}]")
-    axs.plot(df["date"], df["inca_temperature_average"], label="INCA")
-    axs.plot(df["date"], df["era5_temperature_average"], label="ERA5")
+    axs.plot(
+        df["date"], df["inca_temperature_average"], linewidth=LINE_WIDTH, label="INCA"
+    )
+    axs.plot(
+        df["date"], df["era5_temperature_average"], linewidth=LINE_WIDTH, label="ERA5"
+    )
     axs.grid()
     axs.legend()
     fig.tight_layout()
