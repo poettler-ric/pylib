@@ -16,7 +16,7 @@ class LatexData(object):
 __LATEX_NAME = {
     "BetaSeepage": LatexData("\\beta", "\\si{-}"),
     "Cflux": LatexData("Cflux", "\\si{\\milli\\meter\\per\\day}"),
-    "Cfmax": LatexData("Cfmax", "\\si{\\milli\\meter\\per\\celsius\\day}"),
+    "Cfmax": LatexData("Cfmax", "\\si{\\milli\\meter\\per\\degreeCelsius\\day}"),
     "CFR": LatexData("CFR", "\\si{-}"),
     "FC": LatexData("FC", "\\si{\\milli\\meter}"),
     "ICF1": LatexData("ICF", "\\si{\\milli\\meter}"),
@@ -27,8 +27,8 @@ __LATEX_NAME = {
     "N": LatexData("N", "\\si{\\second\\per\\sqrt[3]{\\m}}"),
     "PERC": LatexData("PERC", "\\si{\\milli\\meter\\per\\day}"),
     "SUZ": LatexData("S_{UZ}", "\\si{\\milli\\meter}"),
-    "TT": LatexData("TT", "\\si{\\celsius}"),
-    "TTI": LatexData("TTI", "\\si{\\celsius}"),
+    "TT": LatexData("TT", "\\si{\\degreeCelsius}"),
+    "TTI": LatexData("TTI", "\\si{\\degreeCelsius}"),
     "WHC": LatexData("WHC", "\\si{\\milli\\meter\\per\\milli\\meter}"),
 }
 
@@ -88,21 +88,83 @@ def parse_calibrated(
 
 @staticmethod
 def print_limits_latex(limits: dict[str, Limit]) -> None:
+    print("=== calibration parameters:")
+    print("\\toprule")
+    print("Parameter & Unit & Minimum & Maximum \\\\")
+    print("\\midrule")
     for _, limit in limits.items():
         print(
-            f"${__LATEX_NAME[limit.name].name}$ & {__LATEX_NAME[limit.name].unit} & {limit.start:3f} & {limit.end:3g} \\\\"
+            f"${__LATEX_NAME[limit.name].name}$ & "
+            + f"{__LATEX_NAME[limit.name].unit} & "
+            + f"{limit.start:.4g} & "
+            + f"{limit.end:.4g} \\\\"
         )
+    print("\\bottomrule")
+
+    print("=== calibrated parameters:")
+    print("\\toprule")
+    print(
+        "Parameter & "
+        # + "Unit & "
+        + "INCA NSE & "
+        + "ERA5 NSE & "
+        + "$\\Delta$ INCA [\\%] & "
+        + "ERA5 KGE & "
+        + "$\\Delta$ INCA [\\%] \\\\"
+    )
+    print("\\midrule")
+    for _, limit in limits.items():
+        inca = limit.calibrated["inca_nse"]
+        era5_nse = limit.calibrated["era5_nse"]
+        era5_nse_percent = abs(inca - era5_nse) / (limit.end - limit.start) * 100
+        era5_kge = limit.calibrated["era5_kge"]
+        era5_kge_percent = abs(inca - era5_kge) / (limit.end - limit.start) * 100
+        print(
+            f"${__LATEX_NAME[limit.name].name}$ & "
+            # + f"{__LATEX_NAME[limit.name].unit} & "
+            + f"{inca:.3g} & "
+            + f"{era5_nse:.3g} & "
+            + f"{era5_nse_percent:.1f} & "
+            + f"{era5_kge:.3g} & "
+            + f"{era5_kge_percent:.1f} \\\\"
+        )
+    print("\\bottomrule")
 
 
 @staticmethod
 def print_limits(limits: dict[str, Limit]) -> None:
     table = prettytable.PrettyTable()
-    table.float_format = ".3"
+    table.float_format = ".3f"
     table.align["From"] = "r"
     table.align["To"] = "r"
-    table.field_names = ["Name", "From", "To"]
+    table.field_names = [
+        "Name",
+        "From",
+        "To",
+        "INCA",
+        "ERA5 NSE",
+        "ERA5 NSE percent",
+        "ERA5 KGE",
+        "ERA5 KGE percent",
+    ]
     for _, limit in limits.items():
-        table.add_row([limit.name, limit.start, limit.end])
+        inca = limit.calibrated["inca_nse"]
+        era5_nse = limit.calibrated["era5_nse"]
+        era5_nse_percent = abs(inca - era5_nse) / (limit.end - limit.start) * 100
+        era5_kge = limit.calibrated["era5_kge"]
+        era5_kge_percent = abs(inca - era5_kge) / (limit.end - limit.start) * 100
+        table.add_row(
+            [
+                limit.name,
+                f"{limit.start:.4g}",
+                f"{limit.end:.4g}",
+                f"{inca:.3g}",
+                f"{era5_nse:.3g}",
+                f"{era5_nse_percent:.1f}",
+                f"{era5_kge:.3g}",
+                f"{era5_kge_percent:.1f}",
+            ]
+        )
     print(table)
 
 
@@ -113,7 +175,7 @@ def main():
         "BetaSeepage": "0.01>10.0",
         "Cflux": "0.0>3.0",
         "Cfmax": "0.1>3.0",
-        # TODO: reactivate
+        # was not in parameters for calibration
         # "CFR": "0.0>0.1",
         "FC": "0.1>5.0",
         # doesn't matter, since SetKquickFlow = 1
