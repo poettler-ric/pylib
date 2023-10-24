@@ -482,21 +482,21 @@ def export_pgf(df, folder):
 def print_stats(df):
     for name in get_calibration_column_names(df):
         print(f"= {name}")
-        print(f"NSE = {nse(df['measured'], df[name])}")
-        print(f"NCE = {nce(df['measured'], df[name])}")
-        print(f"KGE = {kge(df['measured'], df[name])}")
+        print(f"NSE = {nse(df['measured'], df[name]):.2f}")
+        print(f"NCE = {nce(df['measured'], df[name]):.2f}")
+        print(f"KGE = {kge(df['measured'], df[name]):.2f}")
 
     precipitation_sum = df[["inca_precipitation_sum", "era5_precipitation_sum"]]
     precipitation_sum_corr = precipitation_sum.corr().loc[
         "inca_precipitation_sum", "era5_precipitation_sum"
     ]
-    print(f"correlation precipitation sum: {precipitation_sum_corr}")
+    print(f"correlation precipitation sum: {precipitation_sum_corr:.2f}")
 
     temperature_average = df[["inca_temperature_average", "era5_temperature_average"]]
     temperature_average_corr = temperature_average.corr().loc[
         "inca_temperature_average", "era5_temperature_average"
     ]
-    print(f"correlation temperature average: {temperature_average_corr}")
+    print(f"correlation temperature average: {temperature_average_corr:.2f}")
 
 
 def main():
