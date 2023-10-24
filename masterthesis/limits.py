@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
 import statistics
-import typing
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from os.path import join as pjoin
 
 import prettytable
@@ -39,19 +38,14 @@ class Limit(object):
     name: str
     start: float
     end: float
-
-
-@dataclass
-class Calibrated(object):
-    name: str
-    value: float
+    calibrated: dict[str, float] = field(default_factory=dict)
 
 
 @staticmethod
 def parse_limits(
-    lookup_definiton: typing.Mapping[str, str], inmap_folder: str
-) -> typing.List[Limit]:
-    limits = []
+    lookup_definiton: dict[str, str], inmap_folder: str
+) -> dict[str, Limit]:
+    limits = {}
     for key, value in lookup_definiton.items():
         factors = value.split(">")
         from_factor, to_factor = float(factors[0]), float(factors[1])
@@ -62,53 +56,52 @@ def parse_limits(
                 values = []
                 for line in lines:
                     values.append(float(line.split()[-1]))
-                limits.append(
-                    Limit(key, min(values) * from_factor, max(values) * to_factor)
+                limits[key] = Limit(
+                    key, min(values) * from_factor, max(values) * to_factor
                 )
             else:
                 line = lines.pop()
                 center = float(line.split()[-1])
-                limits.append(Limit(key, center * from_factor, center * to_factor))
+                limits[key] = Limit(key, center * from_factor, center * to_factor)
     return limits
 
 
 def parse_calibrated(
-    lookup_definiton: typing.Mapping[str, str], intbl: str
-) -> typing.List[Calibrated]:
-    calibrated = []
-    for key, _ in lookup_definiton.items():
-        value = 0.0
+    limits: dict[str, Limit], name: str, intbl: str
+) -> dict[str, Limit]:
+    for key, value in limits.items():
+        result = 0.0
         with open(pjoin(intbl, f"{key}.tbl"), encoding="utf-8") as tbl_file:
             lines = tbl_file.readlines()
             if len(lines) > 1:
                 values = []
                 for line in lines:
                     values.append(float(line.split()[-1]))
-                value = statistics.mean(values)
+                result = statistics.mean(values)
             else:
                 line = lines.pop()
-                value = float(line.split()[-1])
+                result = float(line.split()[-1])
             pass
-        calibrated.append(Calibrated(key, value))
-    return calibrated
+        value.calibrated[name] = result
+    return limits
 
 
 @staticmethod
-def print_limits_latex(limits: typing.List[Limit]) -> None:
-    for limit in limits:
+def print_limits_latex(limits: dict[str, Limit]) -> None:
+    for _, limit in limits.items():
         print(
             f"${__LATEX_NAME[limit.name].name}$ & {__LATEX_NAME[limit.name].unit} & {limit.start:3f} & {limit.end:3g} \\\\"
         )
 
 
 @staticmethod
-def print_limits(limits: typing.List[Limit]) -> None:
+def print_limits(limits: dict[str, Limit]) -> None:
     table = prettytable.PrettyTable()
     table.float_format = ".3"
     table.align["From"] = "r"
     table.align["To"] = "r"
     table.field_names = ["Name", "From", "To"]
-    for limit in limits:
+    for _, limit in limits.items():
         table.add_row([limit.name, limit.start, limit.end])
     print(table)
 
@@ -120,7 +113,8 @@ def main():
         "BetaSeepage": "0.01>10.0",
         "Cflux": "0.0>3.0",
         "Cfmax": "0.1>3.0",
-        "CFR": "0.0>0.1",
+        # TODO: reactivate
+        # "CFR": "0.0>0.1",
         "FC": "0.1>5.0",
         # doesn't matter, since SetKquickFlow = 1
         # "HQ": "0.01>5.0",
@@ -147,9 +141,9 @@ def main():
     intbl_era5_kge = "/data/home/richi/master_thesis/model_MAR/intbl_calib_ERA5_KGE"
 
     limits = parse_limits(opt_lookup, calibration_intbl)
-    calibrated_inca = parse_calibrated(opt_lookup, intbl_inca)
-    calibrated_era5_nse = parse_calibrated(opt_lookup, intbl_era5_nse)
-    calibrated_era5_kge = parse_calibrated(opt_lookup, intbl_era5_kge)
+    parse_calibrated(limits, "inca_nse", intbl_inca)
+    parse_calibrated(limits, "era5_nse", intbl_era5_nse)
+    parse_calibrated(limits, "era5_kge", intbl_era5_kge)
 
     print_limits(limits)
     print_limits_latex(limits)
