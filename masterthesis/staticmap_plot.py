@@ -32,6 +32,7 @@ LANDUSE_LEVEL_1_PGF = (
 
 WIDTH_IN = extract_post_gauges.TEXTWITH_IN
 HEIGHT_IN = WIDTH_IN
+LAYOUT = "tight"
 
 LANDUSE_CODES = {
     1: {
@@ -144,7 +145,6 @@ LANDUSE_CODES = {
 
 
 def savefig(fig: figure.Figure, filename: str) -> None:
-    fig.tight_layout()
     if filename.endswith(".pgf"):
         fig.savefig(filename, backend="pgf")
     else:
@@ -165,7 +165,7 @@ def generateDem(dem_file: str, catchment_file: str) -> typing.NDArray:
 
 
 def writeDem(dem_file: str, catchment_file: str, outfile: str) -> None:
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(layout=LAYOUT)
     fig.set_size_inches(w=WIDTH_IN, h=HEIGHT_IN)
     ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
 
@@ -198,7 +198,7 @@ def writeRiverAndGauges(
     gauge_mask[gauges == -1] = 1
     gauges_masked = ma.masked_array(gauges, mask=gauge_mask)
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(layout=LAYOUT)
     fig.set_size_inches(w=WIDTH_IN, h=HEIGHT_IN)
     ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
 
@@ -222,7 +222,7 @@ def writeStreamOrder(catchment_file: str, streamorder_file: str, outfile: str) -
         mask=getCatchmentMask(catchment_file),
     )
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(layout=LAYOUT)
     fig.set_size_inches(w=WIDTH_IN, h=HEIGHT_IN)
     ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
 
@@ -244,7 +244,7 @@ def writeLdd(catchment_file: str, ldd_file: str, outfile: str) -> None:
         mask=getCatchmentMask(catchment_file),
     )
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(layout=LAYOUT)
     fig.set_size_inches(w=WIDTH_IN, h=HEIGHT_IN)
     ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
 
@@ -268,7 +268,7 @@ def writeLandUse(
         mask=getCatchmentMask(catchment_file),
     )
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(layout=LAYOUT)
     fig.set_size_inches(w=WIDTH_IN, h=HEIGHT_IN)
     ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
 
@@ -294,7 +294,7 @@ def writeLandUse(
             for i in used_ids
         ]
 
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(layout=LAYOUT)
         fig.set_size_inches(w=WIDTH_IN, h=HEIGHT_IN)
         ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
 

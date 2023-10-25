@@ -25,6 +25,7 @@ CALIBRATION_START_DATE = datetime.datetime(2014, 1, 1, 0, 0)
 OFFICIAL_END_DATE = datetime.datetime(2018, 1, 1, 0, 0)
 
 LINE_WIDTH = 1.0
+LAYOUT = "tight"
 
 
 def nse(measured, simulated) -> float:
@@ -342,7 +343,7 @@ def compute_data_frame():
 
 def plot_df(df):
     column_names = get_calibration_column_names(df)
-    fig, axs = plt.subplots(len(column_names))
+    fig, axs = plt.subplots(len(column_names), layout=LAYOUT)
     for index, name in enumerate(column_names):
         axs[index].plot(
             df["date"], df["measured"], "k--", linewidth=LINE_WIDTH, label="measured"
@@ -357,7 +358,7 @@ def plot_df(df):
 
 
 def plotWeather(df):
-    fig, axs = plt.subplots(3)
+    fig, axs = plt.subplots(3, layout=LAYOUT)
     axs[0].set_title("Precipitation Sum")
     axs[0].plot(
         df["date"],
@@ -428,7 +429,7 @@ def export_pgf(df, folder):
         }
     )
     for name in get_calibration_column_names(df):
-        fig, axs = plt.subplots()
+        fig, axs = plt.subplots(layout=LAYOUT)
         fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
         plt.xlabel("Date")
         axs.set_xlim(left=df["date"].iloc[0], right=OFFICIAL_END_DATE)
@@ -438,11 +439,10 @@ def export_pgf(df, folder):
         axs.plot(df["date"], df[name], linewidth=LINE_WIDTH, label="Simulated")
         axs.grid()
         axs.legend()
-        fig.tight_layout()
         fig.savefig(path.join(folder, f"{name}.pgf"), backend="pgf")
         plt.close(fig)
 
-    fig, axs = plt.subplots()
+    fig, axs = plt.subplots(layout=LAYOUT)
     fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
     plt.xlabel("Date")
     axs.set_xlim(left=df["date"].iloc[0], right=OFFICIAL_END_DATE)
@@ -456,11 +456,10 @@ def export_pgf(df, folder):
     )
     axs.grid()
     axs.legend()
-    fig.tight_layout()
     fig.savefig(path.join(folder, "precipitation_sum.pgf"), backend="pgf")
     plt.close(fig)
 
-    fig, axs = plt.subplots()
+    fig, axs = plt.subplots(layout=LAYOUT)
     fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
     plt.xlabel("Date")
     axs.set_xlim(left=df["date"].iloc[0], right=OFFICIAL_END_DATE)
@@ -474,7 +473,6 @@ def export_pgf(df, folder):
     )
     axs.grid()
     axs.legend()
-    fig.tight_layout()
     fig.savefig(path.join(folder, "temperature_average.pgf"), backend="pgf")
     plt.close(fig)
 
