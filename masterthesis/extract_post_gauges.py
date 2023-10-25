@@ -357,6 +357,74 @@ def plot_df(df):
     plt.close(fig)
 
 
+def plotDetails(df: pd.DataFrame, outfile: str = "") -> None:
+    DETAIL_START_DATE = datetime.datetime(2016, 7, 1, 0, 0)
+    DETAIL_END_DATE = datetime.datetime(2016, 8, 1, 0, 0)
+    detail = df[(df["date"] >= DETAIL_START_DATE) & (df["date"] <= DETAIL_END_DATE)]
+
+    fig, ax = plt.subplots(
+        nrows=2, layout=LAYOUT, gridspec_kw={"height_ratios": [1, 3]}
+    )
+    fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
+
+    ax[1].set_xlabel("Date")
+    ax[1].set_xlim(left=DETAIL_START_DATE, right=DETAIL_END_DATE)
+    plt.xticks(rotation=45, ha="right")
+
+    ax[1].set_ylabel("Discharge [\\si{\\cubic\\meter\\per\\second}]")
+    ax[1].plot(
+        detail["date"],
+        detail["measured"],
+        linewidth=LINE_WIDTH,
+        color="black",
+        label="Measured",
+    )
+    ax[1].plot(
+        detail["date"],
+        detail["calibrated_inca_nse"],
+        linewidth=LINE_WIDTH,
+        color="blue",
+        label="Discharge INCA",
+    )
+    ax[1].plot(
+        detail["date"],
+        detail["calibrated_era5_nse"],
+        linewidth=LINE_WIDTH,
+        color="red",
+        label="Discharge ERA5",
+    )
+    ax[1].legend()
+
+    ax[0].set_ylabel("Precipitation [\\si{\\milli\\meter}]")
+    ax[0].set_xticks([])
+    ax[0].set_xlim(left=DETAIL_START_DATE, right=DETAIL_END_DATE)
+    ax[0].plot(
+        detail["date"],
+        detail["inca_precipitation_sum"],
+        linewidth=LINE_WIDTH,
+        color="blue",
+        label="Precipitation INCA",
+    )
+    ax[0].plot(
+        detail["date"],
+        detail["era5_precipitation_sum"],
+        linewidth=LINE_WIDTH,
+        color="red",
+        label="Precipitation ERA5",
+    )
+    ax[0].legend()
+
+    if outfile:
+        if outfile.endswith(".pgf"):
+            plt.savefig(outfile, backend="pgf")
+        else:
+            plt.savefig(outfile)
+
+    else:
+        plt.show()
+    plt.close(fig)
+
+
 def plotWeather(df):
     fig, axs = plt.subplots(3, layout=LAYOUT)
     axs[0].set_title("Precipitation Sum")
@@ -476,6 +544,8 @@ def export_pgf(df, folder):
     fig.savefig(path.join(folder, "temperature_average.pgf"), backend="pgf")
     plt.close(fig)
 
+    plotDetails(df, path.join(folder, "detail_201607.pgf"))
+
 
 def print_stats(df):
     for name in get_calibration_column_names(df):
@@ -509,6 +579,7 @@ def main():
     parser.add_argument(
         "-w", "--weather", action="store_true", help="plot weather data"
     )
+    parser.add_argument("-d", "--details", action="store_true", help="plot details")
     args = parser.parse_args()
 
     df = (
@@ -527,6 +598,8 @@ def main():
         print_stats(df)
     if args.weather:
         plotWeather(df)
+    if args.details:
+        plotDetails(df)
 
 
 if __name__ == "__main__":
