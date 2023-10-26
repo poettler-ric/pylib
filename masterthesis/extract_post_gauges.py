@@ -577,6 +577,58 @@ def export_pgf(df, folder):
     fig.savefig(path.join(folder, "scatter_evaporation_average.png"))
     plt.close(fig)
 
+    # plot precipitation grid difference
+    df["prod"] = df["inca_precipitation_sum"] * df["era5_precipitation_sum"]
+    id = df["prod"].idxmax()
+    duration = df.at[id, "date"] - SIMULATION_START_DATE
+    hours = divmod(duration.total_seconds(), 60**2)[0]
+    filename = f"pre{hours/1000:09.3f}"
+
+    inca_prec_raster = getRaster(
+        path.join(
+            "/data/home/richi/master_thesis/model_MAR/results_INCA/outmaps", filename
+        )
+    )
+    era5_prec_raster = getRaster(
+        path.join(
+            "/data/home/richi/master_thesis/model_MAR/results_ERA5_NSE/outmaps",
+            filename,
+        )
+    )
+    maximum = max(np.nanmax(inca_prec_raster), np.nanmax(era5_prec_raster))
+
+    fig, ax = plt.subplots(layout=LAYOUT)
+    fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
+    ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
+
+    dem_ax = ax.imshow(inca_prec_raster, interpolation="none", vmin=0, vmax=maximum)
+    label = "Precipitation [\\si{\\milli\\meter}]"
+    fig.colorbar(
+        dem_ax,
+        ax=ax,
+        label=label,
+        orientation="horizontal",
+    )
+
+    fig.savefig(path.join(folder, "precipitation_grid_inca.pgf"), backend="pgf")
+    plt.close(fig)
+
+    fig, ax = plt.subplots(layout=LAYOUT)
+    fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
+    ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
+
+    dem_ax = ax.imshow(era5_prec_raster, interpolation="none", vmin=0, vmax=maximum)
+    label = "Precipitation [\\si{\\milli\\meter}]"
+    fig.colorbar(
+        dem_ax,
+        ax=ax,
+        label=label,
+        orientation="horizontal",
+    )
+
+    fig.savefig(path.join(folder, "precipitation_grid_era5.pgf"), backend="pgf")
+    plt.close(fig)
+
 
 def print_stats(df):
     for name in get_calibration_column_names(df):
@@ -602,6 +654,10 @@ def print_stats(df):
         "inca_evaporation_average", "era5_evaporation_average"
     ]
     print(f"correlation evaporation average: {evaporation_average_corr:.2f}")
+
+    df["prod"] = df["inca_precipitation_sum"] * df["era5_precipitation_sum"]
+    id = df["prod"].idxmax()
+    print(f"date where most sources have the most precipitation: {df.at[id, 'date']}")
 
 
 def writeData(df: pd.DataFrame, filename: str) -> None:
