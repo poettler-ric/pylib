@@ -568,11 +568,15 @@ def print_stats(df):
 
 
 def writeData(df: pd.DataFrame, filename: str) -> None:
-    df.to_csv(filename, index=False)
+    if filename.endswith(".csv"):
+        df.to_csv(filename, index=False)
+    df.to_pickle(filename)
 
 
 def readData(filename: str) -> pd.DataFrame:
-    return pd.read_csv(filename, parse_dates=["date"], date_parser=parseDate)
+    if filename.endswith(".csv"):
+        return pd.read_csv(filename, parse_dates=["date"], date_parser=parseDate)
+    return pd.read_pickle(filename)
 
 
 def main():
