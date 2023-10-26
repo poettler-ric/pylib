@@ -546,6 +546,24 @@ def export_pgf(df, folder):
 
     plotDetails(df, path.join(folder, "detail_201607.pgf"))
 
+    fig, ax = plt.subplots(layout=LAYOUT)
+    fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
+    ax.set_xlabel("Precipitation Sum INCA [mm]")
+    ax.set_ylabel("Precipitation Sum ERA5 [mm]")
+    ax.scatter(df["inca_precipitation_sum"], df["era5_precipitation_sum"], marker=".")
+    fig.savefig(path.join(folder, "scatter_precipitation_sum.png"))
+    plt.close(fig)
+
+    fig, ax = plt.subplots(layout=LAYOUT)
+    fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
+    ax.set_xlabel("Temperature average INCA [$^\\circ$C]")
+    ax.set_ylabel("Temperature average ERA5 [$^\\circ$C]")
+    ax.scatter(
+        df["inca_temperature_average"], df["era5_temperature_average"], marker="."
+    )
+    fig.savefig(path.join(folder, "scatter_temperature_average.png"))
+    plt.close(fig)
+
 
 def print_stats(df):
     for name in get_calibration_column_names(df):
