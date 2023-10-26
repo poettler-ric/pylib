@@ -566,6 +566,17 @@ def export_pgf(df, folder):
     fig.savefig(path.join(folder, "scatter_temperature_average.png"))
     plt.close(fig)
 
+    fig, ax = plt.subplots(layout=LAYOUT)
+    fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
+    ax.axis("equal")
+    ax.set_xlabel("Potential evaporation average INCA [mm]")
+    ax.set_ylabel("Potential evaporation average ERA5 [mm]")
+    ax.scatter(
+        df["inca_evaporation_average"], df["era5_evaporation_average"], marker="."
+    )
+    fig.savefig(path.join(folder, "scatter_evaporation_average.png"))
+    plt.close(fig)
+
 
 def print_stats(df):
     for name in get_calibration_column_names(df):
@@ -585,6 +596,12 @@ def print_stats(df):
         "inca_temperature_average", "era5_temperature_average"
     ]
     print(f"correlation temperature average: {temperature_average_corr:.2f}")
+
+    evaporation_average = df[["inca_evaporation_average", "era5_evaporation_average"]]
+    evaporation_average_corr = evaporation_average.corr().loc[
+        "inca_evaporation_average", "era5_evaporation_average"
+    ]
+    print(f"correlation evaporation average: {evaporation_average_corr:.2f}")
 
 
 def writeData(df: pd.DataFrame, filename: str) -> None:
