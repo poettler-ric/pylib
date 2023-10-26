@@ -548,6 +548,7 @@ def export_pgf(df, folder):
 
     fig, ax = plt.subplots(layout=LAYOUT)
     fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
+    ax.axis("equal")
     ax.set_xlabel("Precipitation Sum INCA [mm]")
     ax.set_ylabel("Precipitation Sum ERA5 [mm]")
     ax.scatter(df["inca_precipitation_sum"], df["era5_precipitation_sum"], marker=".")
@@ -556,6 +557,7 @@ def export_pgf(df, folder):
 
     fig, ax = plt.subplots(layout=LAYOUT)
     fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
+    ax.axis("equal")
     ax.set_xlabel("Temperature average INCA [$^\\circ$C]")
     ax.set_ylabel("Temperature average ERA5 [$^\\circ$C]")
     ax.scatter(
