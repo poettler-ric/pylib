@@ -567,33 +567,37 @@ def print_stats(df):
     print(f"correlation temperature average: {temperature_average_corr:.2f}")
 
 
+def writeData(df: pd.DataFrame, filename: str) -> None:
+    df.to_csv(filename, index=False)
+
+
+def readData(filename: str) -> pd.DataFrame:
+    return pd.read_csv(filename, parse_dates=["date"], date_parser=parseDate)
+
+
 def main():
     parser = ArgumentParser()
-    parser.add_argument("-c", "--csv", metavar="file", help="write csv data to file")
+    parser.add_argument("-o", "--output", metavar="file", help="write data to file")
     parser.add_argument("-p", "--plot", action="store_true", help="show plot")
     parser.add_argument("-s", "--stats", action="store_true", help="print stats")
     parser.add_argument(
         "-l", "--latex", metavar="folder", help="write pgf files to folder"
     )
-    parser.add_argument("-i", "--input", metavar="file", help="use data from csv file")
+    parser.add_argument("-i", "--input", metavar="file", help="use data from file")
     parser.add_argument(
         "-w", "--weather", action="store_true", help="plot weather data"
     )
     parser.add_argument("-d", "--details", action="store_true", help="plot details")
     args = parser.parse_args()
 
-    df = (
-        compute_data_frame()
-        if not args.input
-        else pd.read_csv(args.input, parse_dates=["date"], date_parser=parseDate)
-    )
+    df = compute_data_frame() if not args.input else readData(args.input)
 
     if args.plot:
         plot_df(df)
     if args.latex:
         export_pgf(df, args.latex)
-    if args.csv:
-        df.to_csv(args.csv, index=False)
+    if args.output:
+        writeData(df, args.output)
     if args.stats:
         print_stats(df)
     if args.weather:
