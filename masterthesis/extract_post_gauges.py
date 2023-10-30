@@ -551,7 +551,16 @@ def export_pgf(df, folder):
     ax.axis("equal")
     ax.set_xlabel("Precipitation Sum INCA [mm]")
     ax.set_ylabel("Precipitation Sum ERA5 [mm]")
-    ax.scatter(df["inca_precipitation_sum"], df["era5_precipitation_sum"], marker=".")
+    minimum, maximum = scatterMinMax(
+        df["inca_precipitation_sum"], df["era5_precipitation_sum"]
+    )
+    ax.plot([minimum, maximum], [minimum, maximum], color="black")
+    ax.scatter(
+        df["inca_precipitation_sum"],
+        df["era5_precipitation_sum"],
+        marker=".",
+        color="blue",
+    )
     fig.savefig(path.join(folder, "scatter_precipitation_sum.png"))
     plt.close(fig)
 
@@ -560,8 +569,15 @@ def export_pgf(df, folder):
     ax.axis("equal")
     ax.set_xlabel("Temperature average INCA [$^\\circ$C]")
     ax.set_ylabel("Temperature average ERA5 [$^\\circ$C]")
+    minimum, maximum = scatterMinMax(
+        df["inca_temperature_average"], df["era5_temperature_average"]
+    )
+    ax.plot([minimum, maximum], [minimum, maximum], color="black")
     ax.scatter(
-        df["inca_temperature_average"], df["era5_temperature_average"], marker="."
+        df["inca_temperature_average"],
+        df["era5_temperature_average"],
+        marker=".",
+        color="blue",
     )
     fig.savefig(path.join(folder, "scatter_temperature_average.png"))
     plt.close(fig)
@@ -571,8 +587,15 @@ def export_pgf(df, folder):
     ax.axis("equal")
     ax.set_xlabel("Potential evaporation average INCA [mm]")
     ax.set_ylabel("Potential evaporation average ERA5 [mm]")
+    minimum, maximum = scatterMinMax(
+        df["inca_evaporation_average"], df["era5_evaporation_average"]
+    )
+    ax.plot([minimum, maximum], [minimum, maximum], color="black")
     ax.scatter(
-        df["inca_evaporation_average"], df["era5_evaporation_average"], marker="."
+        df["inca_evaporation_average"],
+        df["era5_evaporation_average"],
+        marker=".",
+        color="blue",
     )
     fig.savefig(path.join(folder, "scatter_evaporation_average.png"))
     plt.close(fig)
@@ -628,6 +651,10 @@ def export_pgf(df, folder):
 
     fig.savefig(path.join(folder, "precipitation_grid_era5.pgf"), backend="pgf")
     plt.close(fig)
+
+
+def scatterMinMax(x: np.ndarray, y: np.ndarray):
+    return min(x.min(), y.min()), max(x.max(), y.max())
 
 
 def print_stats(df):
