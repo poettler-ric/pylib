@@ -98,6 +98,9 @@ def stat_outmaps(directory):
     return {
         "precipitation_sum": stat_outmap_sum(prefixed_files["pre"][warm_up_hours:]),
         "precipitation_max": stat_outmap_max(prefixed_files["pre"][warm_up_hours:]),
+        "precipitation_average": stat_outmap_average(
+            prefixed_files["pre"][warm_up_hours:]
+        ),
         "evaporation_average": stat_outmap_average(
             prefixed_files["pot"][warm_up_hours:]
         ),
@@ -323,6 +326,9 @@ def compute_data_frame():
             "calibrated_era5_kge": discharge_sim3[:, gauge_index],
             "inca_precipitation_sum": inca_stats["precipitation_sum"][: len(datetimes)],
             "inca_precipitation_max": inca_stats["precipitation_max"][: len(datetimes)],
+            "inca_precipitation_average": inca_stats["precipitation_average"][
+                : len(datetimes)
+            ],
             "inca_evaporation_average": inca_stats["evaporation_average"][
                 : len(datetimes)
             ],
@@ -331,6 +337,9 @@ def compute_data_frame():
             ],
             "era5_precipitation_sum": era5_stats["precipitation_sum"][: len(datetimes)],
             "era5_precipitation_max": era5_stats["precipitation_max"][: len(datetimes)],
+            "era5_precipitation_average": era5_stats["precipitation_average"][
+                : len(datetimes)
+            ],
             "era5_evaporation_average": era5_stats["evaporation_average"][
                 : len(datetimes)
             ],
@@ -567,6 +576,42 @@ def export_pgf(df, folder):
     fig, ax = plt.subplots(layout=LAYOUT)
     fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
     ax.axis("equal")
+    ax.set_xlabel("Precipitation Maximum INCA [mm]")
+    ax.set_ylabel("Precipitation Maximum ERA5 [mm]")
+    minimum, maximum = scatterMinMax(
+        df["inca_precipitation_max"], df["era5_precipitation_max"]
+    )
+    ax.plot([minimum, maximum], [minimum, maximum], color="black")
+    ax.scatter(
+        df["inca_precipitation_max"],
+        df["era5_precipitation_max"],
+        marker=".",
+        color="blue",
+    )
+    fig.savefig(path.join(folder, "scatter_precipitation_max.png"))
+    plt.close(fig)
+
+    fig, ax = plt.subplots(layout=LAYOUT)
+    fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
+    ax.axis("equal")
+    ax.set_xlabel("Precipitation Average INCA [mm]")
+    ax.set_ylabel("Precipitation Average ERA5 [mm]")
+    minimum, maximum = scatterMinMax(
+        df["inca_precipitation_average"], df["era5_precipitation_average"]
+    )
+    ax.plot([minimum, maximum], [minimum, maximum], color="black")
+    ax.scatter(
+        df["inca_precipitation_average"],
+        df["era5_precipitation_average"],
+        marker=".",
+        color="blue",
+    )
+    fig.savefig(path.join(folder, "scatter_precipitation_average.png"))
+    plt.close(fig)
+
+    fig, ax = plt.subplots(layout=LAYOUT)
+    fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
+    ax.axis("equal")
     ax.set_xlabel("Temperature average INCA [$^\\circ$C]")
     ax.set_ylabel("Temperature average ERA5 [$^\\circ$C]")
     minimum, maximum = scatterMinMax(
@@ -669,6 +714,20 @@ def print_stats(df):
         "inca_precipitation_sum", "era5_precipitation_sum"
     ]
     print(f"correlation precipitation sum: {precipitation_sum_corr:.2f}")
+
+    precipitation_max = df[["inca_precipitation_max", "era5_precipitation_max"]]
+    precipitation_max_corr = precipitation_max.corr().loc[
+        "inca_precipitation_max", "era5_precipitation_max"
+    ]
+    print(f"correlation precipitation max: {precipitation_max_corr:.2f}")
+
+    precipitation_average = df[
+        ["inca_precipitation_average", "era5_precipitation_average"]
+    ]
+    precipitation_average_corr = precipitation_average.corr().loc[
+        "inca_precipitation_average", "era5_precipitation_average"
+    ]
+    print(f"correlation precipitation average: {precipitation_average_corr:.2f}")
 
     temperature_average = df[["inca_temperature_average", "era5_temperature_average"]]
     temperature_average_corr = temperature_average.corr().loc[
