@@ -13,14 +13,21 @@ from argparse import ArgumentParser
 
 import matplotlib.pyplot as plt
 import numpy as np
+import numpy.ma as ma
+import numpy.typing as typing
 import pandas as pd
 import pytz
 from osgeo import gdal
 
 TEXTWITH_IN = 4.7747
 SIMULATION_START_DATE = datetime.datetime(2013, 1, 1, 0, 0)
+SIMULATION_END_DATE = datetime.datetime(2017, 12, 30, 0, 0)
 CALIBRATION_START_DATE = datetime.datetime(2014, 1, 1, 0, 0)
 OFFICIAL_END_DATE = datetime.datetime(2018, 1, 1, 0, 0)
+
+CATCHMENT_FILE = (
+    "/data/home/richi/master_thesis/model_MAR/staticmaps/wflow_subcatch.map"
+)
 
 LINE_WIDTH = 1.0
 LAYOUT = "tight"
@@ -32,6 +39,13 @@ def nse(measured, simulated) -> float:
         - ((simulated - measured) ** 2).sum()
         / ((measured - measured.mean()) ** 2).sum()
     )
+
+
+def getCatchmentMask(catchment_file: str) -> typing.NDArray:
+    catchment_mask = getRaster(catchment_file)
+    catchment_mask[catchment_mask == 1] = 0
+    catchment_mask[catchment_mask == np.nan] = 1
+    return catchment_mask
 
 
 def nce(measured, simulated) -> float:
@@ -56,28 +70,51 @@ def getRaster(filename, no_data=np.nan):
     return raster
 
 
-def stat_outmap_max(filenames):
+def stat_outmap_max(filenames, mask=None):
     result = np.zeros((len(filenames)))
     for i, filename in enumerate(filenames):
         raster = getRaster(filename)
+        if mask is not None:
+            raster = ma.masked_array(raster, mask=mask)
         result[i] = np.nanmax(raster)
     return result
 
 
-def stat_outmap_sum(filenames):
+def stat_outmap_sum(filenames, mask=None):
     result = np.zeros((len(filenames)))
     for i, filename in enumerate(filenames):
         raster = getRaster(filename)
+        if mask is not None:
+            raster = ma.masked_array(raster, mask=mask)
         result[i] = np.nansum(raster)
     return result
 
 
-def stat_outmap_average(filenames):
+def stat_outmap_average(filenames, mask=None):
     result = np.zeros((len(filenames)))
     for i, filename in enumerate(filenames):
         raster = getRaster(filename)
+        if mask is not None:
+            raster = ma.masked_array(raster, mask=mask)
         result[i] = np.nanmean(raster)
     return result
+
+
+def statPotentialEvaporation(directory: str) -> typing.NDArray:
+    _, _, filenames = next(os.walk(directory))
+    filenames = sorted(filenames)
+
+    warumup_duration = CALIBRATION_START_DATE - SIMULATION_START_DATE
+    warm_up_hours = int(divmod(warumup_duration.total_seconds(), 3600)[0])
+    calibration_duration = SIMULATION_END_DATE - CALIBRATION_START_DATE
+    calibration_hours = int(divmod(calibration_duration.total_seconds(), 3600)[0])
+
+    prefixedFilenames = [
+        path.join(directory, f)
+        for f in filenames[warm_up_hours : warm_up_hours + calibration_hours + 1]
+    ]
+    catchmentMask = getCatchmentMask(CATCHMENT_FILE)
+    return stat_outmap_average(prefixedFilenames, mask=catchmentMask)
 
 
 def stat_outmaps(directory):
@@ -318,6 +355,7 @@ def compute_data_frame():
     era5_stats = stat_outmaps(
         "/data/home/richi/master_thesis/model_MAR/results_ERA5_NSE/outmaps"
     )
+    era5_evaporation = statPotentialEvaporation("/data/home/richi/tmp/warped")
 
     return pd.DataFrame(
         {
@@ -345,6 +383,7 @@ def compute_data_frame():
             "era5_evaporation_average": era5_stats["evaporation_average"][
                 : len(datetimes)
             ],
+            "era5_evaporation_average_download": era5_evaporation[: len(datetimes)],
             "era5_temperature_average": era5_stats["temperature_average"][
                 : len(datetimes)
             ],
