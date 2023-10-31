@@ -81,6 +81,10 @@ def stat_outmap_average(filenames):
 
 
 def stat_outmaps(directory):
+    # Outmaps are generated from start datetime of the simulation until the end datetime
+    # INCLUSIVE.
+    # This means that start "2010-01-01 00:00" until "2010-01-02 00:00" will generate 25
+    # maps.
     _, _, filenames = next(os.walk(directory))
     filenames = sorted(filenames)
     prefixed_files = {}
