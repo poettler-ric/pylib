@@ -17,8 +17,6 @@ import pandas as pd
 import pytz
 from osgeo import gdal
 
-gdal.UseExceptions()
-
 TEXTWITH_IN = 4.7747
 SIMULATION_START_DATE = datetime.datetime(2013, 1, 1, 0, 0)
 CALIBRATION_START_DATE = datetime.datetime(2014, 1, 1, 0, 0)
@@ -775,6 +773,8 @@ def readData(filename: str) -> pd.DataFrame:
 
 
 def main():
+    gdal.UseExceptions()
+
     parser = ArgumentParser()
     parser.add_argument("-o", "--output", metavar="file", help="write data to file")
     parser.add_argument("-p", "--plot", action="store_true", help="show plot")
