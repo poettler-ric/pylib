@@ -709,6 +709,22 @@ def print_stats(df):
         print(f"NCE = {nce(df['measured'], df[name]):.2f}")
         print(f"KGE = {kge(df['measured'], df[name]):.2f}")
 
+    print(
+        "highest precipitation sum: "
+        + f"INCA: {df['inca_precipitation_sum'].max():.2f} "
+        + f"ERA5: {df['era5_precipitation_sum'].max():.2f}"
+    )
+    print(
+        "highest precipitation max: "
+        + f"INCA: {df['inca_precipitation_max'].max():.2f} "
+        + f"ERA5: {df['era5_precipitation_max'].max():.2f}"
+    )
+    print(
+        "highest precipitation average: "
+        + f"INCA: {df['inca_precipitation_average'].max():.2f} "
+        + f"ERA5: {df['era5_precipitation_average'].max():.2f}"
+    )
+
     precipitation_sum = df[["inca_precipitation_sum", "era5_precipitation_sum"]]
     precipitation_sum_corr = precipitation_sum.corr().loc[
         "inca_precipitation_sum", "era5_precipitation_sum"
