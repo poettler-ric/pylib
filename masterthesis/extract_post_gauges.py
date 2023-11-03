@@ -686,6 +686,24 @@ def export_pgf(df, folder):
     fig.savefig(path.join(folder, "scatter_evaporation_average.png"))
     plt.close(fig)
 
+    fig, ax = plt.subplots(layout=LAYOUT)
+    fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
+    ax.axis("equal")
+    ax.set_xlabel("Potential evaporation average ERA5 calculated [mm]")
+    ax.set_ylabel("Potential evaporation average ERA5 downloaded [mm]")
+    minimum, maximum = scatterMinMax(
+        df["era5_evaporation_average"], df["era5_evaporation_average_download"]
+    )
+    ax.plot([minimum, maximum], [minimum, maximum], color="black")
+    ax.scatter(
+        df["era5_evaporation_average"],
+        df["era5_evaporation_average_download"],
+        marker=".",
+        color="blue",
+    )
+    fig.savefig(path.join(folder, "scatter_evaporation_average_era5_era5_download.png"))
+    plt.close(fig)
+
     # plot precipitation grid difference
     df["prod"] = df["inca_precipitation_sum"] * df["era5_precipitation_sum"]
     id = df["prod"].idxmax()
@@ -765,6 +783,12 @@ def print_stats(df):
         + f"INCA: {df['inca_precipitation_average'].max():.2f} "
         + f"ERA5: {df['era5_precipitation_average'].max():.2f}"
     )
+    print(
+        "highest evaporation average: "
+        + f"INCA: {df['inca_evaporation_average'].max():.2f} "
+        + f"ERA5: {df['era5_evaporation_average'].max():.2f} "
+        + f"ERA5 download: {df['era5_evaporation_average_download'].max():.2f}"
+    )
 
     precipitation_sum = df[["inca_precipitation_sum", "era5_precipitation_sum"]]
     precipitation_sum_corr = precipitation_sum.corr().loc[
@@ -797,6 +821,26 @@ def print_stats(df):
         "inca_evaporation_average", "era5_evaporation_average"
     ]
     print(f"correlation evaporation average: {evaporation_average_corr:.2f}")
+
+    evaporation_average = df[
+        ["inca_evaporation_average", "era5_evaporation_average_download"]
+    ]
+    evaporation_average_corr = evaporation_average.corr().loc[
+        "inca_evaporation_average", "era5_evaporation_average_download"
+    ]
+    print(
+        f"correlation evaporation average (inca, era5 download): {evaporation_average_corr:.2f}"
+    )
+
+    evaporation_average = df[
+        ["era5_evaporation_average", "era5_evaporation_average_download"]
+    ]
+    evaporation_average_corr = evaporation_average.corr().loc[
+        "era5_evaporation_average", "era5_evaporation_average_download"
+    ]
+    print(
+        f"correlation evaporation average (era5, era5 download): {evaporation_average_corr:.2f}"
+    )
 
     df["prod"] = df["inca_precipitation_sum"] * df["era5_precipitation_sum"]
     id = df["prod"].idxmax()

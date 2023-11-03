@@ -147,12 +147,16 @@ def print_limits(limits: dict[str, Limit]) -> None:
         "ERA5 KGE",
         "ERA5 KGE percent",
     ]
+    nse_precent_sum = 0
+    kge_precent_sum = 0
     for _, limit in limits.items():
         inca = limit.calibrated["inca_nse"]
         era5_nse = limit.calibrated["era5_nse"]
         era5_nse_percent = abs(inca - era5_nse) / (limit.end - limit.start) * 100
         era5_kge = limit.calibrated["era5_kge"]
         era5_kge_percent = abs(inca - era5_kge) / (limit.end - limit.start) * 100
+        nse_precent_sum += era5_nse_percent
+        kge_precent_sum += era5_kge_percent
         table.add_row(
             [
                 limit.name,
@@ -166,6 +170,9 @@ def print_limits(limits: dict[str, Limit]) -> None:
             ]
         )
     print(table)
+    from icecream import ic
+
+    ic(nse_precent_sum, kge_precent_sum)
 
 
 def main():
