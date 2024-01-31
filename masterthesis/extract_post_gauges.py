@@ -582,6 +582,23 @@ def export_pgf(df, folder):
     plt.xlabel("Date")
     axs.set_xlim(left=df["date"].iloc[0], right=OFFICIAL_END_DATE)
     plt.xticks(rotation=45, ha="right")
+    plt.ylabel("Average Precipitation [\\si{\\milli\\meter\\per\\hour}]")
+    axs.plot(
+        df["date"], df["inca_precipitation_average"], linewidth=LINE_WIDTH, label="INCA"
+    )
+    axs.plot(
+        df["date"], df["era5_precipitation_average"], linewidth=LINE_WIDTH, label="ERA5"
+    )
+    axs.grid()
+    axs.legend()
+    fig.savefig(path.join(folder, "precipitation_average.pgf"), backend="pgf")
+    plt.close(fig)
+
+    fig, axs = plt.subplots(layout=LAYOUT)
+    fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
+    plt.xlabel("Date")
+    axs.set_xlim(left=df["date"].iloc[0], right=OFFICIAL_END_DATE)
+    plt.xticks(rotation=45, ha="right")
     plt.ylabel("Average Temperature [\\si{\\degreeCelsius}]")
     axs.plot(
         df["date"], df["inca_temperature_average"], linewidth=LINE_WIDTH, label="INCA"
