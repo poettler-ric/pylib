@@ -253,17 +253,49 @@ def writeLdd(catchment_file: str, ldd_file: str, outfile: str) -> None:
         mask=getCatchmentMask(catchment_file),
     )
 
+    from icecream import ic
+
+    unique_ids = np.sort(np.unique(ldd[~ldd.mask]))
+    ic(unique_ids)
+
+    ldd_legends = {
+        1: "Drainage direction to the southwest",
+        2: "Drainage direction to the south",
+        3: "Drainage direction to the southeast",
+        4: "Drainage direction to the west",
+        5: "No drainage direction (e.g. a pit)",
+        6: "Drainage direction to the east",
+        7: "Drainage direction to the northwest",
+        8: "Drainage direction to the north",
+        9: "Drainage direction to the northeast",
+    }
+    palette = list(
+        generateColorMap(
+            9,
+            0,
+            0,
+            0,
+            True,
+        )
+    )
+    colormap = colors.ListedColormap(palette)
+    color_patches = [
+        mpatches.Patch(color=color, label=ldd_legends[direction])
+        for direction, color in zip(range(1, 10), palette)
+    ]
+
     fig, ax = plt.subplots(layout=LAYOUT)
     fig.set_size_inches(w=WIDTH_IN, h=HEIGHT_IN)
     ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
 
-    ldd_ax = ax.imshow(ldd, cmap="viridis", interpolation="none")
-    cbar = fig.colorbar(ldd_ax, ax=ax, label="Direction", orientation="horizontal")
-    ticks = range(int(np.nanmin(ldd)), int(np.nanmax(ldd)) + 1)
-    cbar.set_ticks(
-        ticks=ticks,
-        labels=[str(i) for i in ticks],
-    )
+    ldd_ax = ax.imshow(ldd, cmap=colormap, interpolation="none")
+    fig.legend(handles=color_patches, loc="lower left")
+    # cbar = fig.colorbar(ldd_ax, ax=ax, label="Direction", orientation="horizontal")
+    # ticks = range(int(np.nanmin(ldd)), int(np.nanmax(ldd)) + 1)
+    # cbar.set_ticks(
+    #     ticks=ticks,
+    #     labels=[str(i) for i in ticks],
+    # )
 
     savefig(fig, outfile)
     plt.close(fig)
