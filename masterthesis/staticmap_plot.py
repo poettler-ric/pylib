@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import extract_post_gauges
 import matplotlib.colors as colors
 import matplotlib.figure as figure
 import matplotlib.patches as mpatches
@@ -8,6 +7,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
 import numpy.typing as typing
+
+import extract_post_gauges
 
 CATCHMENT_FILE = (
     "/data/home/richi/master_thesis/model_MAR/staticmaps/wflow_subcatch.map"
@@ -25,7 +26,7 @@ DEM_PGF = "/data/home/richi/master_thesis/thesis/images/wflow_dem.pgf"
 RIVER_PGF = "/data/home/richi/master_thesis/thesis/images/wflow_river.pgf"
 STREAMORDER_PGF = "/data/home/richi/master_thesis/thesis/images/wflow_streamorder.pgf"
 LDD_PGF = "/data/home/richi/master_thesis/thesis/images/wflow_ldd.pgf"
-LANDUSE_PGF = "/data/home/richi/master_thesis/thesis/images/wflow_landuse.pgf"
+LANDUSE_PGF = "/data/home/richi/master_thesis/thesis/images/wflow_landuse.png"
 LANDUSE_LEVEL_1_PGF = (
     "/data/home/richi/master_thesis/thesis/images/wflow_landuse_level_1.pgf"
 )
@@ -84,7 +85,8 @@ LANDUSE_CODES = {
             1: {"name": "Annual crops associated with permanent crops"},
             2: {"name": "Complex cultivation patterns"},
             3: {
-                "name": "Land principally occupied by agriculture, with significant areas of natural vegetation"
+                "name": "Land principally occupied by agriculture"
+                # "name": "Land principally occupied by agriculture, with significant areas of natural vegetation"
             },
             4: {"name": "Agro-forestry areas"},
         },
@@ -144,6 +146,13 @@ LANDUSE_CODES = {
 }
 
 
+def getNameForLanduse(code):
+    level1 = code // 100
+    level2 = (code // 10) % 10
+    level3 = code % 10
+    return LANDUSE_CODES[level1][level2][level3]["name"]
+
+
 def savefig(fig: figure.Figure, filename: str) -> None:
     if filename.endswith(".pgf"):
         fig.savefig(filename, backend="pgf")
@@ -173,7 +182,7 @@ def writeDem(dem_file: str, catchment_file: str, outfile: str) -> None:
         extract_post_gauges.getRaster(dem_file), mask=getCatchmentMask(catchment_file)
     )
     dem_ax = ax.imshow(dem)
-    label = "Elevation [\\si{\\meter}]" if outfile.endswith(".pgf") else "Elevation [m]"
+    label = "Elevation [m.a.s.l.]"
     fig.colorbar(
         dem_ax,
         ax=ax,
@@ -203,7 +212,7 @@ def writeRiverAndGauges(
     ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
 
     dem_ax = ax.imshow(generateDem(dem_file, catchment_file), alpha=0.6)
-    label = "Elevation [\\si{\\meter}]" if outfile.endswith(".pgf") else "Elevation [m]"
+    label = "Elevation [m.a.s.l.]"
     fig.colorbar(dem_ax, ax=ax, label=label, orientation="horizontal")
     river_map = colors.ListedColormap(["blue"])
     ax.imshow(river_masked, cmap=river_map, interpolation="none")
@@ -260,6 +269,22 @@ def writeLdd(catchment_file: str, ldd_file: str, outfile: str) -> None:
     plt.close(fig)
 
 
+def generateColorMap(count, red, green, blue, exclude_white=False):
+    temp_count = count
+    if exclude_white:
+        temp_count += 1
+
+    values = np.linspace(1, 0, temp_count)
+    if exclude_white:
+        values = values[:-1]
+
+    return (
+        # (red if red else i, green if green else i, blue if blue else i) for i in values
+        (red, green, blue, i)
+        for i in values
+    )
+
+
 def writeLandUse(
     catchment_file: str, landuse_file: str, outfile: str, outfile_level_1: str = ""
 ) -> None:
@@ -268,28 +293,61 @@ def writeLandUse(
         mask=getCatchmentMask(catchment_file),
     )
 
+    level1_colors = {
+        # 1: "black",
+        1: (0, 0, 0),
+        # 2: "yellow",
+        2: (1, 1, 0),
+        # 3: "green",
+        3: (0, 0.5, 0),
+        # 4: "mediumaquamarine",
+        # 5: "blue",
+    }
+
+    unique_ids = np.sort(np.unique(landuse[~landuse.mask]))
+    cathegories = {}
+    # cathegorize ids
+    for i in unique_ids:
+        cathegory = i // 100
+        if cathegory not in cathegories:
+            cathegories[cathegory] = []
+        cathegories[cathegory].append(i)
+
+    palette = []
+    for cathegory, values in cathegories.items():
+        palette += list(
+            generateColorMap(
+                len(values),
+                level1_colors[cathegory][0],
+                level1_colors[cathegory][1],
+                level1_colors[cathegory][2],
+                True,
+            )
+        )
+    colormap = colors.ListedColormap(palette)
+    color_patches = [
+        mpatches.Patch(color=color, label=getNameForLanduse(code))
+        for code, color in zip(unique_ids, palette)
+    ]
+
     fig, ax = plt.subplots(layout=LAYOUT)
-    fig.set_size_inches(w=WIDTH_IN, h=HEIGHT_IN)
+    fig.set_size_inches(w=WIDTH_IN, h=HEIGHT_IN * 3)
     ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
 
-    landuse_ax = ax.imshow(landuse, cmap="viridis", interpolation="none")
-    fig.colorbar(landuse_ax, ax=ax, label="Landuse ID", orientation="horizontal")
+    # landuse_ax = ax.imshow(
+    #     landuse, cmap=colormap, interpolation="none", extent=(-1.5, 1, 1, 0)
+    # )
+    landuse_ax = ax.imshow(landuse, cmap=colormap, interpolation="none")
+    fig.legend(handles=color_patches, loc="lower left")
 
     savefig(fig, outfile)
     plt.close(fig)
 
     if outfile_level_1:
         level1 = landuse // 100
-        level1_colors = {
-            1: "black",
-            2: "yellow",
-            3: "green",
-            4: "mediumaquamarine",
-            5: "blue",
-        }
         used_ids = np.unique(level1.compressed())
         level1_map = colors.ListedColormap([level1_colors[i] for i in used_ids])
-        patches = [
+        level1_patches = [
             mpatches.Patch(color=level1_colors[i], label=LANDUSE_CODES[i]["name"])
             for i in used_ids
         ]
@@ -299,7 +357,7 @@ def writeLandUse(
         ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
 
         ax.imshow(level1, cmap=level1_map, interpolation="none")
-        fig.legend(handles=patches, loc="lower left")
+        fig.legend(handles=level1_patches, loc="lower left")
 
         savefig(fig, outfile_level_1)
         plt.close(fig)
