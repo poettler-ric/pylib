@@ -22,12 +22,14 @@ STREAMORDER_FILE = (
 LDD_FILE = "/data/home/richi/master_thesis/model_MAR/staticmaps/wflow_ldd.map"
 LANDUSE_FILE = "/data/home/richi/master_thesis/model_MAR/staticmaps/wflow_landuse.map"
 
-DEM_PGF = "/data/home/richi/master_thesis/thesis/images/wflow_dem.pgf"
-RIVER_PGF = "/data/home/richi/master_thesis/thesis/images/wflow_river.pgf"
-STREAMORDER_PGF = "/data/home/richi/master_thesis/thesis/images/wflow_streamorder.pgf"
-LDD_PGF = "/data/home/richi/master_thesis/thesis/images/wflow_ldd.pgf"
-LANDUSE_PGF = "/data/home/richi/master_thesis/thesis/images/wflow_landuse.png"
-LANDUSE_LEVEL_1_PGF = (
+DEM_OUTFILE = "/data/home/richi/master_thesis/thesis/images/wflow_dem.pgf"
+RIVER_OUTFILE = "/data/home/richi/master_thesis/thesis/images/wflow_river.pgf"
+STREAMORDER_OUTFILE = (
+    "/data/home/richi/master_thesis/thesis/images/wflow_streamorder.png"
+)
+LDD_OUTFILE = "/data/home/richi/master_thesis/thesis/images/wflow_ldd.png"
+LANDUSE_OUTFILE = "/data/home/richi/master_thesis/thesis/images/wflow_landuse.png"
+LANDUSE_LEVEL_1_OUTFILE = (
     "/data/home/richi/master_thesis/thesis/images/wflow_landuse_level_1.pgf"
 )
 
@@ -231,17 +233,29 @@ def writeStreamOrder(catchment_file: str, streamorder_file: str, outfile: str) -
         mask=getCatchmentMask(catchment_file),
     )
 
+    unique_ids = np.sort(np.unique(streamorder[~streamorder.mask]))
+    palette = list(
+        generateColorMap(
+            len(unique_ids),
+            0,
+            0,
+            0,
+            True,
+        )
+    )
+    palette.reverse()
+    colormap = colors.ListedColormap(palette)
+    color_patches = [
+        mpatches.Patch(color=color, label=f"Streamorder {streamorder_id:g}")
+        for streamorder_id, color in zip(unique_ids, palette)
+    ]
+
     fig, ax = plt.subplots(layout=LAYOUT)
-    fig.set_size_inches(w=WIDTH_IN, h=HEIGHT_IN)
+    fig.set_size_inches(w=WIDTH_IN, h=HEIGHT_IN * 2)
     ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
 
-    stream_ax = ax.imshow(streamorder, cmap="plasma", interpolation="none")
-    cbar = fig.colorbar(stream_ax, ax=ax, label="Streamorder", orientation="horizontal")
-    ticks = range(int(np.nanmin(streamorder)), int(np.nanmax(streamorder)) + 1)
-    cbar.set_ticks(
-        ticks=ticks,
-        labels=[str(i) for i in ticks],
-    )
+    stream_ax = ax.imshow(streamorder, cmap=colormap, interpolation="none")
+    fig.legend(handles=color_patches, loc="lower left")
 
     savefig(fig, outfile)
     plt.close(fig)
@@ -252,11 +266,6 @@ def writeLdd(catchment_file: str, ldd_file: str, outfile: str) -> None:
         extract_post_gauges.getRaster(ldd_file, -1),
         mask=getCatchmentMask(catchment_file),
     )
-
-    from icecream import ic
-
-    unique_ids = np.sort(np.unique(ldd[~ldd.mask]))
-    ic(unique_ids)
 
     ldd_legends = {
         1: "Drainage direction to the southwest",
@@ -285,7 +294,7 @@ def writeLdd(catchment_file: str, ldd_file: str, outfile: str) -> None:
     ]
 
     fig, ax = plt.subplots(layout=LAYOUT)
-    fig.set_size_inches(w=WIDTH_IN, h=HEIGHT_IN)
+    fig.set_size_inches(w=WIDTH_IN, h=HEIGHT_IN * 2)
     ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
 
     ldd_ax = ax.imshow(ldd, cmap=colormap, interpolation="none")
@@ -315,6 +324,12 @@ def generateColorMap(count, red, green, blue, exclude_white=False):
         (red, green, blue, i)
         for i in values
     )
+
+
+def generateRedBlueMap(count):
+    red = np.linspace(0, 1, count)
+    blue = np.flip(red)
+    return ((r, 0, b) for r, b in zip(red, blue))
 
 
 def writeLandUse(
@@ -404,11 +419,11 @@ def main() -> None:
         }
     )
 
-    writeDem(DEM_FILE, CATCHMENT_FILE, DEM_PGF)
-    writeRiverAndGauges(DEM_FILE, CATCHMENT_FILE, RIVER_FILE, GAUGE_FILE, RIVER_PGF)
-    writeStreamOrder(CATCHMENT_FILE, STREAMORDER_FILE, STREAMORDER_PGF)
-    writeLdd(CATCHMENT_FILE, LDD_FILE, LDD_PGF)
-    writeLandUse(CATCHMENT_FILE, LANDUSE_FILE, LANDUSE_PGF, LANDUSE_LEVEL_1_PGF)
+    writeDem(DEM_FILE, CATCHMENT_FILE, DEM_OUTFILE)
+    writeRiverAndGauges(DEM_FILE, CATCHMENT_FILE, RIVER_FILE, GAUGE_FILE, RIVER_OUTFILE)
+    writeStreamOrder(CATCHMENT_FILE, STREAMORDER_FILE, STREAMORDER_OUTFILE)
+    writeLdd(CATCHMENT_FILE, LDD_FILE, LDD_OUTFILE)
+    writeLandUse(CATCHMENT_FILE, LANDUSE_FILE, LANDUSE_OUTFILE, LANDUSE_LEVEL_1_OUTFILE)
 
 
 if __name__ == "__main__":
