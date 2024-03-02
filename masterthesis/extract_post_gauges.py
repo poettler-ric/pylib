@@ -62,11 +62,13 @@ def kge(measured, simulated) -> float:
     return 1 - np.sqrt((r - 1) ** 2 + (beta - 1) ** 2 + (gamma - 1) ** 2)
 
 
-def getRaster(filename, no_data=np.nan):
+def getRaster(filename, no_data=np.nan, mask=None):
     ds = gdal.Open(filename)
     raster = ds.GetRasterBand(1).ReadAsArray()
     no_data_value = ds.GetRasterBand(1).GetNoDataValue()
     raster[raster == no_data_value] = no_data
+    if mask is not None:
+        raster = ma.masked_array(raster, mask=mask)
     return raster
 
 
@@ -97,6 +99,33 @@ def stat_outmap_average(filenames, mask=None):
         if mask is not None:
             raster = ma.masked_array(raster, mask=mask)
         result[i] = np.nanmean(raster)
+    return result
+
+
+def sumMaps(filenames, mask=None):
+    result = getRaster(filenames[0])
+    for filename in filenames[1:]:
+        result += getRaster(filename)
+    return ma.masked_array(result, mask)
+
+
+def generateYearlyAverageEvaporation(directory: str) -> typing.NDArray:
+    _, _, filenames = next(os.walk(directory))
+    filenames = sorted(filenames)
+
+    warumup_duration = CALIBRATION_START_DATE - SIMULATION_START_DATE
+    warm_up_hours = int(divmod(warumup_duration.total_seconds(), 3600)[0])
+    calibration_duration = SIMULATION_END_DATE - CALIBRATION_START_DATE
+    calibration_hours = int(divmod(calibration_duration.total_seconds(), 3600)[0])
+
+    prefixedFilenames = [
+        path.join(directory, f)
+        for f in filenames[warm_up_hours : warm_up_hours + calibration_hours + 1]
+    ]
+    catchmentMask = getCatchmentMask(CATCHMENT_FILE)
+    result = sumMaps(prefixedFilenames, mask=catchmentMask)
+    hoursInYear = 24 * 365.25
+    result = result / (len(prefixedFilenames) / hoursInYear)
     return result
 
 
@@ -450,17 +479,17 @@ def plotDetails(df: pd.DataFrame, outfile: str = "") -> None:
     ax[0].set_xlim(left=DETAIL_START_DATE, right=DETAIL_END_DATE)
     ax[0].plot(
         detail["date"],
-        detail["inca_precipitation_sum"],
+        detail["inca_precipitation_average"],
         linewidth=LINE_WIDTH,
         color="blue",
-        label="Precipitation INCA",
+        label="Avg. Precipitation INCA",
     )
     ax[0].plot(
         detail["date"],
-        detail["era5_precipitation_sum"],
+        detail["era5_precipitation_average"],
         linewidth=LINE_WIDTH,
         color="red",
-        label="Precipitation ERA5",
+        label="Avg. Precipitation ERA5",
     )
     ax[0].legend()
 
@@ -594,20 +623,28 @@ def export_pgf(df, folder):
     fig.savefig(path.join(folder, "precipitation_average.pgf"), backend="pgf")
     plt.close(fig)
 
-    fig, axs = plt.subplots(layout=LAYOUT)
-    fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
-    plt.xlabel("Date")
-    axs.set_xlim(left=df["date"].iloc[0], right=OFFICIAL_END_DATE)
-    plt.xticks(rotation=45, ha="right")
-    plt.ylabel("Average Temperature [\\si{\\degreeCelsius}]")
-    axs.plot(
+    fig, axs = plt.subplots(2, layout=LAYOUT)
+    fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN * 1.5)
+
+    axs[0].set_title("Average hourly temperature INCA")
+    axs[0].set_xlabel("Date")
+    axs[0].tick_params(labelrotation=45)
+    axs[0].set_xlim(left=df["date"].iloc[0], right=OFFICIAL_END_DATE)
+    axs[0].set_ylabel("Temperature [\\si{\\degreeCelsius}]")
+    axs[0].plot(
         df["date"], df["inca_temperature_average"], linewidth=LINE_WIDTH, label="INCA"
     )
-    axs.plot(
+    axs[0].grid()
+
+    axs[1].set_title("Average hourly temperature ERA5")
+    axs[1].set_xlabel("Date")
+    axs[1].tick_params(labelrotation=45)
+    axs[1].set_xlim(left=df["date"].iloc[0], right=OFFICIAL_END_DATE)
+    axs[1].set_ylabel("Temperature [\\si{\\degreeCelsius}]")
+    axs[1].plot(
         df["date"], df["era5_temperature_average"], linewidth=LINE_WIDTH, label="ERA5"
     )
-    axs.grid()
-    axs.legend()
+    axs[1].grid()
     fig.savefig(path.join(folder, "temperature_average.pgf"), backend="pgf")
     plt.close(fig)
 
@@ -891,6 +928,7 @@ def main():
         "-w", "--weather", action="store_true", help="plot weather data"
     )
     parser.add_argument("-d", "--details", action="store_true", help="plot details")
+    parser.add_argument("-t", "--test", action="store_true", help="debugging")
     args = parser.parse_args()
 
     df = compute_data_frame() if not args.input else readData(args.input)
@@ -907,6 +945,33 @@ def main():
         plotWeather(df)
     if args.details:
         plotDetails(df)
+    if args.test:
+        from icecream import ic
+
+        # test = getRaster("/data/home/richi/tmp/warped/Muerz_PEV_20170506_2100.tiff")
+        #
+        # ic(np.nanmin(test), np.nanmax(test))
+        # return
+
+        fig, ax = plt.subplots(layout=LAYOUT)
+        fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
+        ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
+
+        eva_raster = generateYearlyAverageEvaporation("/data/home/richi/tmp/warped")
+        ic(np.nanmin(eva_raster), np.nanmax(eva_raster))
+
+        dem_ax = ax.imshow(eva_raster, interpolation="none")
+        label = "Average yearly evaporation [\\si{\\milli\\meter}]"
+        fig.colorbar(
+            dem_ax,
+            ax=ax,
+            label=label,
+            orientation="horizontal",
+        )
+
+        plt.show()
+        # fig.savefig(path.join(folder, "precipitation_grid_inca.pgf"), backend="pgf")
+        plt.close(fig)
 
 
 if __name__ == "__main__":
