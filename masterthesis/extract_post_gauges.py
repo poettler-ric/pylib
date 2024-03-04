@@ -778,36 +778,30 @@ def export_pgf(df, folder):
     )
     maximum = max(np.nanmax(inca_prec_raster), np.nanmax(era5_prec_raster))
 
-    fig, ax = plt.subplots(layout=LAYOUT, dpi=300)
-    fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
-    ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
+    fig, ax = plt.subplots(2, layout=LAYOUT, dpi=300)
+    fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN * 1.5)
 
-    dem_ax = ax.imshow(inca_prec_raster, interpolation="none", vmin=0, vmax=maximum)
-    label = "Precipitation [\\si{\\milli\\meter}]"
+    ax[0].set_title("ERA5 Precipitation")
+    ax[0].tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
+    dem_ax = ax[0].imshow(era5_prec_raster, interpolation="none", vmin=0, vmax=maximum)
     fig.colorbar(
         dem_ax,
-        ax=ax,
-        label=label,
-        orientation="horizontal",
+        ax=ax[0],
+        label="Precipitation [\\si{\\milli\\meter}]",
+        shrink=0.7,
     )
 
-    fig.savefig(path.join(folder, "precipitation_grid_inca.pgf"), backend="pgf")
-    plt.close(fig)
-
-    fig, ax = plt.subplots(layout=LAYOUT, dpi=300)
-    fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
-    ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
-
-    dem_ax = ax.imshow(era5_prec_raster, interpolation="none", vmin=0, vmax=maximum)
-    label = "Precipitation [\\si{\\milli\\meter}]"
+    ax[1].set_title("INCA Precipitation")
+    ax[1].tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
+    dem_ax = ax[1].imshow(inca_prec_raster, interpolation="none", vmin=0, vmax=maximum)
     fig.colorbar(
         dem_ax,
-        ax=ax,
-        label=label,
-        orientation="horizontal",
+        ax=ax[1],
+        label="Precipitation [\\si{\\milli\\meter}]",
+        shrink=0.7,
     )
 
-    fig.savefig(path.join(folder, "precipitation_grid_era5.pgf"), backend="pgf")
+    fig.savefig(path.join(folder, "precipitation_grid_era5_inca.pgf"), backend="pgf")
     plt.close(fig)
 
 
