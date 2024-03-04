@@ -422,7 +422,7 @@ def compute_data_frame():
 
 def plot_df(df):
     column_names = get_calibration_column_names(df)
-    fig, axs = plt.subplots(len(column_names), layout=LAYOUT)
+    fig, axs = plt.subplots(len(column_names), layout=LAYOUT, dpi=300)
     for index, name in enumerate(column_names):
         axs[index].plot(
             df["date"], df["measured"], "k--", linewidth=LINE_WIDTH, label="measured"
@@ -442,7 +442,7 @@ def plotDetails(df: pd.DataFrame, outfile: str = "") -> None:
     detail = df[(df["date"] >= DETAIL_START_DATE) & (df["date"] <= DETAIL_END_DATE)]
 
     fig, ax = plt.subplots(
-        nrows=2, layout=LAYOUT, gridspec_kw={"height_ratios": [1, 3]}
+        nrows=2, layout=LAYOUT, gridspec_kw={"height_ratios": [1, 3]}, dpi=300
     )
     fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
 
@@ -505,7 +505,7 @@ def plotDetails(df: pd.DataFrame, outfile: str = "") -> None:
 
 
 def plotWeather(df):
-    fig, axs = plt.subplots(3, layout=LAYOUT)
+    fig, axs = plt.subplots(3, layout=LAYOUT, dpi=300)
     axs[0].set_title("Precipitation Sum")
     axs[0].plot(
         df["date"],
@@ -576,7 +576,7 @@ def export_pgf(df, folder):
         }
     )
     for name in get_calibration_column_names(df):
-        fig, axs = plt.subplots(layout=LAYOUT)
+        fig, axs = plt.subplots(layout=LAYOUT, dpi=300)
         fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
         plt.xlabel("Date")
         axs.set_xlim(left=df["date"].iloc[0], right=OFFICIAL_END_DATE)
@@ -589,7 +589,7 @@ def export_pgf(df, folder):
         fig.savefig(path.join(folder, f"{name}.pgf"), backend="pgf")
         plt.close(fig)
 
-    fig, axs = plt.subplots(layout=LAYOUT)
+    fig, axs = plt.subplots(layout=LAYOUT, dpi=300)
     fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
     plt.xlabel("Date")
     axs.set_xlim(left=df["date"].iloc[0], right=OFFICIAL_END_DATE)
@@ -606,7 +606,7 @@ def export_pgf(df, folder):
     fig.savefig(path.join(folder, "precipitation_sum.pgf"), backend="pgf")
     plt.close(fig)
 
-    fig, axs = plt.subplots(layout=LAYOUT)
+    fig, axs = plt.subplots(layout=LAYOUT, dpi=300)
     fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
     plt.xlabel("Date")
     axs.set_xlim(left=df["date"].iloc[0], right=OFFICIAL_END_DATE)
@@ -623,7 +623,7 @@ def export_pgf(df, folder):
     fig.savefig(path.join(folder, "precipitation_average.pgf"), backend="pgf")
     plt.close(fig)
 
-    fig, axs = plt.subplots(2, layout=LAYOUT)
+    fig, axs = plt.subplots(2, layout=LAYOUT, dpi=300)
     fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN * 1.5)
 
     axs[0].set_title("Average hourly temperature INCA")
@@ -650,7 +650,7 @@ def export_pgf(df, folder):
 
     plotDetails(df, path.join(folder, "detail_201607.pgf"))
 
-    fig, ax = plt.subplots(layout=LAYOUT)
+    fig, ax = plt.subplots(layout=LAYOUT, dpi=300)
     fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
     ax.axis("equal")
     ax.set_xlabel("Precipitation Sum INCA [mm]")
@@ -668,7 +668,7 @@ def export_pgf(df, folder):
     fig.savefig(path.join(folder, "scatter_precipitation_sum.png"))
     plt.close(fig)
 
-    fig, ax = plt.subplots(layout=LAYOUT)
+    fig, ax = plt.subplots(layout=LAYOUT, dpi=300)
     fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
     ax.axis("equal")
     ax.set_xlabel("Precipitation Maximum INCA [mm]")
@@ -686,7 +686,7 @@ def export_pgf(df, folder):
     fig.savefig(path.join(folder, "scatter_precipitation_max.png"))
     plt.close(fig)
 
-    fig, ax = plt.subplots(layout=LAYOUT)
+    fig, ax = plt.subplots(layout=LAYOUT, dpi=300)
     fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
     ax.axis("equal")
     ax.set_xlabel("Precipitation Average INCA [mm]")
@@ -704,7 +704,7 @@ def export_pgf(df, folder):
     fig.savefig(path.join(folder, "scatter_precipitation_average.png"))
     plt.close(fig)
 
-    fig, ax = plt.subplots(layout=LAYOUT)
+    fig, ax = plt.subplots(layout=LAYOUT, dpi=300)
     fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
     ax.axis("equal")
     ax.set_xlabel("Temperature average INCA [$^\\circ$C]")
@@ -722,7 +722,7 @@ def export_pgf(df, folder):
     fig.savefig(path.join(folder, "scatter_temperature_average.png"))
     plt.close(fig)
 
-    fig, ax = plt.subplots(layout=LAYOUT)
+    fig, ax = plt.subplots(layout=LAYOUT, dpi=300)
     fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
     ax.axis("equal")
     ax.set_xlabel("Potential evaporation average INCA [mm]")
@@ -740,7 +740,7 @@ def export_pgf(df, folder):
     fig.savefig(path.join(folder, "scatter_evaporation_average.png"))
     plt.close(fig)
 
-    fig, ax = plt.subplots(layout=LAYOUT)
+    fig, ax = plt.subplots(layout=LAYOUT, dpi=300)
     fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
     ax.axis("equal")
     ax.set_xlabel("Potential evaporation average ERA5 calculated [mm]")
@@ -778,7 +778,7 @@ def export_pgf(df, folder):
     )
     maximum = max(np.nanmax(inca_prec_raster), np.nanmax(era5_prec_raster))
 
-    fig, ax = plt.subplots(layout=LAYOUT)
+    fig, ax = plt.subplots(layout=LAYOUT, dpi=300)
     fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
     ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
 
@@ -794,7 +794,7 @@ def export_pgf(df, folder):
     fig.savefig(path.join(folder, "precipitation_grid_inca.pgf"), backend="pgf")
     plt.close(fig)
 
-    fig, ax = plt.subplots(layout=LAYOUT)
+    fig, ax = plt.subplots(layout=LAYOUT, dpi=300)
     fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
     ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
 
@@ -953,7 +953,7 @@ def main():
         # ic(np.nanmin(test), np.nanmax(test))
         # return
 
-        fig, ax = plt.subplots(layout=LAYOUT)
+        fig, ax = plt.subplots(layout=LAYOUT, dpi=300)
         fig.set_size_inches(w=TEXTWITH_IN, h=TEXTWITH_IN)
         ax.tick_params(bottom=False, labelbottom=False, left=False, labelleft=False)
 
