@@ -7,8 +7,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.ma as ma
 import numpy.typing as typing
+from osgeo import gdal, osr
 
 import extract_post_gauges
+
+PIXEL_WIDTH = 400
+PIXEL_HEIGHT = -400
+ORIGIN_X = 497000.0
+ORIGIN_Y = 5295000.0
+CRS = "EPSG:32633"
+CRS_EPSG = 32633
+
 
 CATCHMENT_FILE = (
     "/data/home/richi/master_thesis/model_MAR/staticmaps/wflow_subcatch.map"
@@ -315,14 +324,26 @@ def generateColorMap(count, red, green, blue, exclude_white=False):
     if exclude_white:
         temp_count += 1
 
-    values = np.linspace(1, 0, temp_count)
+    values = np.linspace(255, 0, temp_count)
     if exclude_white:
         values = values[:-1]
 
+    red_scale = np.linspace(red, 255, temp_count)
+    green_scale = np.linspace(green, 255, temp_count)
+    blue_scale = np.linspace(blue, 255, temp_count)
+
+    if exclude_white:
+        red_scale = red_scale[:-1]
+        green_scale = green_scale[:-1]
+        blue_scale = blue_scale[:-1]
+
     return (
-        # (red if red else i, green if green else i, blue if blue else i) for i in values
-        (red, green, blue, i)
-        for i in values
+        (r, g, b)
+        for r, g, b in zip(red_scale, green_scale, blue_scale)
+        # (red if red else i, green if green else i, blue if blue else i)
+        # for i in values
+        # (red, green, blue, i)
+        # for i in values
     )
 
 
@@ -410,6 +431,227 @@ def writeLandUse(
         plt.close(fig)
 
 
+def create_raster(
+    file_name,
+    raster_array,
+    origin,
+    epsg=4326,
+    pixel_width=10,
+    pixel_height=10,
+    nan_value=-9999.0,
+    rdtype=gdal.GDT_Float32,
+):
+    """
+    Convert a numpy.array to a GeoTIFF raster with the following parameters
+    :param file_name: STR of target file name, including directory; must end on ".tif"
+    :param raster_array: np.array of values to rasterize
+    :param origin: TUPLE of (x, y) origin coordinates
+    :param epsg: INT of EPSG:XXXX projection to use - default=4326
+    :param pixel_height: INT of pixel height (multiple of unit defined with the EPSG number) - default=10m
+    :param pixel_width: INT of pixel width (multiple of unit defined with the EPSG number) - default=10m
+    :param nan_value: INT/FLOAT no-data value to be used in the raster (replaces non-numeric and np.nan in array)
+                        default=-9999.0
+    :param rdtype: gdal.GDALDataType raster data type - default=gdal.GDT_Float32 (32 bit floating point)
+    """
+    # check out driver
+    driver = gdal.GetDriverByName("GTiff")
+
+    # create raster dataset with number of cols and rows of the input array
+    cols = raster_array.shape[1]
+    rows = raster_array.shape[0]
+    new_raster = driver.Create(file_name, cols, rows, 1, eType=rdtype)
+
+    # apply geo-origin and pixel dimensions
+    origin_x = origin[0]
+    origin_y = origin[1]
+    new_raster.SetGeoTransform((origin_x, pixel_width, 0, origin_y, 0, pixel_height))
+
+    # replace np.nan values
+    # raster_array[np.isnan(raster_array)] = nan_value
+
+    # retrieve band number 1
+    band = new_raster.GetRasterBand(1)
+    band.SetNoDataValue(nan_value)
+    band.WriteArray(raster_array)
+    band.SetScale(1.0)
+
+    # create projection and assign to raster
+    srs = osr.SpatialReference()
+    srs.ImportFromEPSG(epsg)
+    new_raster.SetProjection(srs.ExportToWkt())
+
+    # release raster band
+    band.FlushCache()
+
+
+def prepareQgis():
+    qgis_path = "/data/home/richi/master_thesis/thesis/qgis/catchment_maps"
+
+    # dem
+    dem = ma.masked_array(
+        extract_post_gauges.getRaster(DEM_FILE), mask=getCatchmentMask(CATCHMENT_FILE)
+    )
+    dem[dem.mask] = np.nan
+    create_raster(
+        f"{qgis_path}/dem.tiff",
+        dem,
+        (ORIGIN_X, ORIGIN_Y),
+        CRS_EPSG,
+        PIXEL_WIDTH,
+        PIXEL_HEIGHT,
+    )
+
+    # river
+    river = extract_post_gauges.getRaster(RIVER_FILE, no_data=-1)
+    river_mask = np.zeros(river.shape)
+    river_mask[river == -1] = 1
+    river = ma.masked_array(river, mask=river_mask)
+    river[river.mask] = -1
+    create_raster(
+        f"{qgis_path}/river.tiff",
+        river,
+        (ORIGIN_X, ORIGIN_Y),
+        CRS_EPSG,
+        PIXEL_WIDTH,
+        PIXEL_HEIGHT,
+        nan_value=-1,
+        rdtype=gdal.GDT_Int32,
+    )
+
+    landuse = ma.masked_array(
+        extract_post_gauges.getRaster(LANDUSE_FILE, -1),
+        mask=getCatchmentMask(CATCHMENT_FILE),
+    )
+
+    # landuse
+    landuse[landuse.mask] = -1
+    create_raster(
+        f"{qgis_path}/landuse.tiff",
+        landuse,
+        (ORIGIN_X, ORIGIN_Y),
+        CRS_EPSG,
+        PIXEL_WIDTH,
+        PIXEL_HEIGHT,
+        nan_value=-1,
+        rdtype=gdal.GDT_Int32,
+    )
+
+    # legend for landuse
+    level1_colors = {
+        # 1: "black",
+        1: (0, 0, 0),
+        # 2: "yellow",
+        2: (255, 255, 0),
+        # 3: "green",
+        3: (0, 255 / 2, 0),
+        # 4: "mediumaquamarine",
+        # 5: "blue",
+    }
+
+    unique_ids = np.sort(np.unique(landuse[~landuse.mask]))[1:]
+    cathegories = {}
+    for i in unique_ids:
+        cathegory = i // 100
+        if cathegory not in cathegories:
+            cathegories[cathegory] = []
+        cathegories[cathegory].append(i)
+
+    palette = []
+    for cathegory, values in cathegories.items():
+        palette += list(
+            generateColorMap(
+                len(values),
+                level1_colors[cathegory][0],
+                level1_colors[cathegory][1],
+                level1_colors[cathegory][2],
+                exclude_white=True,
+            )
+        )
+
+    with open(f"{qgis_path}/landuse_legend.txt", "w") as file:
+        for code, color in zip(unique_ids, palette):
+            file.write(
+                f"{code} {color[0]} {color[1]} {color[2]} 255 {getNameForLanduse(code)}\n"
+            )
+
+    # ldd map
+    ldd = ma.masked_array(
+        extract_post_gauges.getRaster(LDD_FILE, -1),
+        mask=getCatchmentMask(CATCHMENT_FILE),
+    )
+    ldd[ldd.mask] = 255
+    create_raster(
+        f"{qgis_path}/ldd.tiff",
+        ldd,
+        (ORIGIN_X, ORIGIN_Y),
+        CRS_EPSG,
+        PIXEL_WIDTH,
+        PIXEL_HEIGHT,
+        nan_value=255,
+        rdtype=gdal.GDT_Byte,
+    )
+
+    # ldd legend
+    ldd_legends = {
+        1: "Drainage direction to the southwest",
+        2: "Drainage direction to the south",
+        3: "Drainage direction to the southeast",
+        4: "Drainage direction to the west",
+        5: "No drainage direction (e.g. a pit)",
+        6: "Drainage direction to the east",
+        7: "Drainage direction to the northwest",
+        8: "Drainage direction to the north",
+        9: "Drainage direction to the northeast",
+    }
+    palette = list(
+        generateColorMap(
+            9,
+            0,
+            0,
+            0,
+            True,
+        )
+    )
+    with open(f"{qgis_path}/ldd_legend.txt", "w") as file:
+        for direction, color in zip(range(1, 10), palette):
+            file.write(
+                f"{direction} {color[0]} {color[1]} {color[2]} 255 {ldd_legends[direction]}\n"
+            )
+
+    # streamorder
+    streamorder = ma.masked_array(
+        extract_post_gauges.getRaster(STREAMORDER_FILE),
+        mask=getCatchmentMask(CATCHMENT_FILE),
+    )
+    streamorder[streamorder.mask] = np.nan
+    create_raster(
+        f"{qgis_path}/streamorder.tiff",
+        streamorder,
+        (ORIGIN_X, ORIGIN_Y),
+        CRS_EPSG,
+        PIXEL_WIDTH,
+        PIXEL_HEIGHT,
+    )
+
+    # stream order legend
+    unique_ids = np.sort(np.unique(streamorder[~streamorder.mask]))[:-1]
+    palette = list(
+        generateColorMap(
+            len(unique_ids),
+            0,
+            0,
+            0,
+            True,
+        )
+    )
+    palette.reverse()
+    with open(f"{qgis_path}/streamorder_legend.txt", "w") as file:
+        for streamorder_id, color in zip(unique_ids, palette):
+            file.write(
+                f"{streamorder_id:g} {color[0]} {color[1]} {color[2]} 255 Streamorder {streamorder_id:g}\n"
+            )
+
+
 def main() -> None:
     plt.rcParams.update(
         {
@@ -419,11 +661,12 @@ def main() -> None:
         }
     )
 
-    writeDem(DEM_FILE, CATCHMENT_FILE, DEM_OUTFILE)
+    # writeDem(DEM_FILE, CATCHMENT_FILE, DEM_OUTFILE)
     writeRiverAndGauges(DEM_FILE, CATCHMENT_FILE, RIVER_FILE, GAUGE_FILE, RIVER_OUTFILE)
-    writeStreamOrder(CATCHMENT_FILE, STREAMORDER_FILE, STREAMORDER_OUTFILE)
-    writeLdd(CATCHMENT_FILE, LDD_FILE, LDD_OUTFILE)
-    writeLandUse(CATCHMENT_FILE, LANDUSE_FILE, LANDUSE_OUTFILE, LANDUSE_LEVEL_1_OUTFILE)
+    # writeStreamOrder(CATCHMENT_FILE, STREAMORDER_FILE, STREAMORDER_OUTFILE)
+    # writeLdd(CATCHMENT_FILE, LDD_FILE, LDD_OUTFILE)
+    # writeLandUse(CATCHMENT_FILE, LANDUSE_FILE, LANDUSE_OUTFILE, LANDUSE_LEVEL_1_OUTFILE)
+    prepareQgis()
 
 
 if __name__ == "__main__":
